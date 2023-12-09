@@ -1,5 +1,6 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import Game from './Game.model';
 
 interface StadionAttributes {
   id: number;
@@ -9,7 +10,7 @@ interface StadionAttributes {
 
 interface StadionCreationAttributes extends Optional<StadionAttributes, 'id'> {}
 
-export default class Stadion
+class Stadion
   extends Model<StadionAttributes, StadionCreationAttributes>
   implements StadionAttributes
 {
@@ -32,3 +33,5 @@ Stadion.init(
     modelName: 'Stadion',
   },
 );
+
+export default Stadion;

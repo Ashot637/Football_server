@@ -19,10 +19,11 @@ export default function (...roles: ROLES[]) {
         token,
         process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret,
       ) as unknown as IUserTokenData;
-      if (!roles?.includes(decoded.role)) {
+      if (!roles?.includes(decoded?.role)) {
         return res.status(401).json({ message: "You don't have access" });
       }
-      req.user = decoded as unknown as IUserTokenData;
+
+      (req as Request & { user?: IUserTokenData }).user = decoded as unknown as IUserTokenData;
       next();
     } catch (e) {
       console.log('Error in authentication middleware:', e);

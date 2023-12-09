@@ -1,6 +1,7 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
 import { ROLES } from '../types/Roles';
+import UserGame from './UserGame.model';
 
 interface UserAttributes {
   id: number;
@@ -11,10 +12,7 @@ interface UserAttributes {
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
 
-export default class User
-  extends Model<UserAttributes, UserCreationAttributes>
-  implements UserAttributes
-{
+class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public email!: string;
   public password!: string;
@@ -45,3 +43,5 @@ User.init(
     modelName: 'User',
   },
 );
+
+export default User;

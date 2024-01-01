@@ -4,15 +4,23 @@ dotenv.config();
 import express from 'express';
 import sequelize from './src/db';
 import bodyParser from 'body-parser';
+import cors from 'cors';
+import path from 'path';
+import fileUpload from 'express-fileupload';
 import errorHandler from './src/middlewares/errorHandler';
-import { GameRouter, StadionRouter, UserRouter } from './src/routes';
+import { GameRouter, StadionRouter, UserRouter, FacilitieRouter } from './src/routes';
 
 const app = express();
+
 app.use(bodyParser.json());
+app.use(cors());
+app.use(express.static(path.resolve(__dirname, 'src', 'static')));
+app.use(fileUpload({}));
 
 app.use('/api/v2/', UserRouter);
 app.use('/api/v2/', StadionRouter);
 app.use('/api/v2/', GameRouter);
+app.use('/api/v2/', FacilitieRouter);
 
 app.use(errorHandler);
 
@@ -41,3 +49,6 @@ start();
 // }
 
 // clearDatabase();
+
+// import seedAll from './src/seeds';
+// seedAll();

@@ -1,23 +1,22 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Game, Stadion, User, UserGame } from '../models';
+import { Facilitie, Game, Stadion, User, UserGame, Guest } from '../models';
 import { type RequestWithUser } from '../types/RequestWithUser';
+import { Op } from 'sequelize';
 
 interface CreateRequest {
+  price: number;
   startTime: Date;
   endTime: Date;
   maxPlayersCount: number;
   stadionId: number;
 }
 
-export const create = async (
-  req: Request<{}, {}, CreateRequest>,
-  res: Response,
-  next: NextFunction,
-) => {
+const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
   try {
-    const { startTime, endTime, maxPlayersCount, stadionId } = req.body;
+    const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
 
     const game = await Game.create({
+      price,
       startTime,
       endTime,
       maxPlayersCount,
@@ -30,10 +29,86 @@ export const create = async (
   }
 };
 
-export const getAll = async (req: Request, res: Response, next: NextFunction) => {
+interface GetAllRequest {
+  date?: string;
+  language?: 'en' | 'ru' | 'am';
+}
+
+const getAll = async (
+  req: Request<{}, {}, {}, GetAllRequest>,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const { date, language } = req.query;
+    let WHERE: { where?: { startTime: { [Op.between]: Date[] } } } = {};
+    if (date) {
+      const day = new Date(date);
+      const startOfDay = new Date(
+        Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, 0, 0, 0),
+      );
+      const endOfDay = new Date(
+        Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 23, 59, 59, 999),
+      );
+      WHERE = {
+        where: {
+          startTime: {
+            [Op.between]: [startOfDay, endOfDay],
+          },
+        },
+      };
+    }
+
+    let games;
+    if (language) {
+      games = await Game.findAll({
+        ...(date ? WHERE : {}),
+        include: [
+          {
+            model: Stadion,
+            as: 'stadion',
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              'id',
+              'img',
+            ],
+          },
+        ],
+      });
+    } else {
+      games = await Game.findAll({
+        include: [{ model: Stadion, as: 'stadion' }],
+      });
+    }
+
+    res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getByStadionId = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { language } = req.query;
+    const { stadionId } = req.params;
+
     const games = await Game.findAll({
-      include: [{ model: Stadion, as: 'stadion' }],
+      where: {
+        stadionId,
+      },
+      include: [
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+            'id',
+            'img',
+          ],
+        },
+      ],
     });
 
     res.send(games);
@@ -42,16 +117,56 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const getOne = async (req: Request, res: Response, next: NextFunction) => {
+interface GetOneRequest {
+  language?: 'en' | 'ru' | 'am';
+}
+
+const getOne = async (
+  req: Request<{ id: string }, {}, {}, GetOneRequest>,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
+    const { language } = req.query;
+    let game;
 
-    const game = await Game.findByPk(id, {
-      include: [
-        { model: Stadion, as: 'stadion' },
-        { model: User, as: 'users', attributes: { exclude: ['password'] } },
-      ],
-    });
+    if (language) {
+      game = await Game.findByPk(id, {
+        include: [
+          {
+            model: Guest,
+            as: 'guests',
+          },
+          {
+            model: Stadion,
+            as: 'stadion',
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              'id',
+              'img',
+            ],
+            include: [
+              {
+                model: Facilitie,
+                as: 'facilities',
+                attributes: [[`title_${language}`, `title`], 'id', 'img'],
+              },
+            ],
+          },
+          { model: User, as: 'users' },
+        ],
+      });
+    } else {
+      game = await Game.findByPk(id, {
+        include: [
+          { model: Guest, as: 'guests' },
+          { model: Stadion, as: 'stadion', include: [{ model: Facilitie, as: 'facilities' }] },
+          { model: User, as: 'users' },
+        ],
+      });
+    }
 
     if (!game) {
       return res.status(404).json({ success: false, message: 'Game not found' });
@@ -63,7 +178,218 @@ export const getOne = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const register = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+interface RemoveRequest {
+  ids: number[];
+}
+
+const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: NextFunction) => {
+  try {
+    const { ids } = req.body;
+
+    await Game.destroy({
+      where: {
+        id: {
+          [Op.in]: ids,
+        },
+      },
+    });
+
+    res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const update = async (
+  req: Request<{ id: string }, {}, CreateRequest>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
+    const { id } = req.params;
+
+    const [rowsUpdated, [updatedGame]] = await Game.update(
+      {
+        price,
+        startTime,
+        endTime,
+        maxPlayersCount,
+        stadionId,
+      },
+      {
+        where: {
+          id: id,
+        },
+        returning: true,
+      },
+    );
+
+    if (rowsUpdated === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+
+    res.json(updatedGame);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const register = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { gameId } = req.params;
+    const { team, uniform, guests } = req.body;
+
+    const game = await Game.findByPk(gameId);
+
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+
+    if (game.playersCount === game.maxPlayersCount) {
+      return res.status(403).json({ success: false, message: 'Already have maximum players' });
+    }
+
+    if (![1, 2].includes(team) || ![0, 1, 2, 3].includes(uniform)) {
+      return res.status(404).json({ success: false, message: 'Invalid information' });
+    }
+
+    const userGame = await UserGame.create({
+      userId,
+      gameId: +gameId,
+      team: +team,
+    });
+
+    let guestsArray = [];
+    if (guests) {
+      guestsArray = JSON.parse(guests);
+      guestsArray.forEach((guest: Guest) => {
+        Guest.create({ name: guest.name, phone: guest.phone, team, gameId: +gameId, userId });
+      });
+    }
+
+    game.playersCount = ++game.playersCount! + guestsArray.length;
+    if (team === 1) {
+      game.playersCountFirstGroup = ++game.playersCountFirstGroup! + guestsArray.length;
+      game.uniformsFirstGroup = game.uniformsFirstGroup?.map((currentUniform, index) => {
+        if (index === uniform) {
+          return ++currentUniform + guestsArray.length;
+        }
+        return currentUniform;
+      });
+    } else {
+      game.playersCountSecondGroup = ++game.playersCountSecondGroup! + guestsArray.length;
+      game.uniformsSecondGroup = game.uniformsSecondGroup?.map((currentUniform, index) => {
+        if (index === uniform) {
+          return ++currentUniform + guestsArray.length;
+        }
+        return currentUniform;
+      });
+    }
+
+    await game.save();
+
+    res.send({ success: true, userGame });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { language } = req.query;
+
+    const userGames = await UserGame.findAll({
+      where: {
+        userId,
+      },
+    });
+
+    if (!userGames) {
+      return res.status(404).json({ success: false, message: 'Games not found' });
+    }
+
+    if (!userGames.length) {
+      return res.json([]);
+    }
+
+    const gameIds = userGames.map((userGame) => userGame.gameId);
+
+    const games = await Game.findAll({
+      where: {
+        id: gameIds,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: User,
+          as: 'users',
+          where: {
+            id: userId,
+          },
+        },
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+          ],
+        },
+      ],
+    });
+
+    res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getActivity = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { language } = req.query;
+
+    const games = await Game.findAll({
+      include: [
+        {
+          model: User,
+          as: 'users',
+          through: { attributes: [], where: { userId } },
+        },
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [[`title_${language}`, `title`]],
+        },
+      ],
+      where: {
+        startTime: {
+          [Op.lt]: new Date(),
+        },
+      },
+    });
+
+    res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
@@ -77,17 +403,39 @@ export const register = async (req: RequestWithUser, res: Response, next: NextFu
       return res.status(404).json({ success: false, message: 'Game not found' });
     }
 
-    if (game.playersCount === game.maxPlayersCount) {
-      return res.status(403).json({ success: false, message: 'Already have maximum players' });
-    }
-
-    await UserGame.create({
-      userId,
-      gameId: +gameId,
+    const gameToCancel = await UserGame.findOne({
+      where: {
+        gameId,
+        userId,
+      },
     });
 
-    game.playersCount = game?.playersCount ? ++game.playersCount : 1;
-    await game.save();
+    if (!gameToCancel) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+
+    await UserGame.destroy({
+      where: {
+        gameId,
+        userId,
+      },
+    });
+
+    const deletedGuestCount = await Guest.destroy({
+      where: {
+        gameId,
+        userId,
+      },
+    });
+
+    game.playersCount = --game.playersCount! - deletedGuestCount;
+    if (gameToCancel.team === 1) {
+      game.playersCountFirstGroup = --game.playersCountFirstGroup! - deletedGuestCount;
+    } else {
+      game.playersCountSecondGroup = --game.playersCountSecondGroup! - deletedGuestCount;
+    }
+
+    game.save();
 
     res.send({ success: true });
   } catch (error) {
@@ -98,6 +446,12 @@ export const register = async (req: RequestWithUser, res: Response, next: NextFu
 export default {
   create,
   getAll,
+  getByStadionId,
   getOne,
+  remove,
+  update,
   register,
+  getUpcomingGames,
+  getActivity,
+  cancel,
 };

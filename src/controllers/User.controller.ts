@@ -1,4 +1,4 @@
-import { User } from '../models';
+import { Game, Stadion, User } from '../models';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
 import { ROLES } from '../types/Roles';
@@ -7,13 +7,15 @@ import { generateCode } from '../helpers/generateCode';
 import * as uuid from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcrypt';
 
 interface RegisterRequest {
   name: string;
   phone: string;
+  password: string;
 }
 
-let userToVerify: { name: string; phone: string; code: number };
+const usersToVerify: Record<string, number> = {};
 
 const register = async (
   req: Request<{}, {}, RegisterRequest>,
@@ -30,12 +32,12 @@ const register = async (
 
     const code = generateCode();
 
-    console.log('====================================');
-    console.log(code);
-    console.log('====================================');
+    usersToVerify[phone] = code;
 
-    userToVerify = { name, phone, code };
-    res.send({ success: true, message: 'Enter 4 digit code', userToVerify });
+    console.log('====================================');
+    console.log(usersToVerify);
+    console.log('====================================');
+    return res.send({ success: true, phone, name });
   } catch (error) {
     next(error);
   }
@@ -43,49 +45,57 @@ const register = async (
 
 const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next: NextFunction) => {
   try {
-    const { name, phone } = req.body;
+    const { phone, password } = req.body;
 
-    const user = await User.findOne({ where: { phone, name } });
+    const user = await User.findOne({ where: { phone } });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid name or phone' });
+      return res.status(401).json({ success: false, message: 'Invalid phone or password' });
     }
 
-    const code = generateCode();
+    const comparePassword = bcrypt.compareSync(password, user.password);
+    if (!comparePassword) {
+      return res.status(500).json({ success: false, message: 'Invalid phone or password' });
+    }
 
-    userToVerify = { name, phone, code };
-    res.send({ success: true, message: 'Enter 4 digit code', role: user.role });
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
+      expiresIn: '7d',
+    });
+
+    return res.send({ ...user.dataValues, accessToken });
   } catch (error) {
     next(error);
   }
 };
 
 interface CodeRequest {
+  phone: string;
   code: string;
+  name: string;
+  password: string;
 }
 
 const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: NextFunction) => {
   try {
-    const { code } = req.body;
+    const { phone, code, name, password } = req.body;
 
-    if (!userToVerify) {
+    if (!usersToVerify[phone]) {
       return res.status(400).json({ success: false });
     }
 
-    if (+code === userToVerify.code) {
-      let user = await User.findOne({
-        where: { name: userToVerify.name, phone: userToVerify.phone },
+    if (usersToVerify[phone] === +code) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      let user = await User.create({
+        phone,
+        name,
+        password: passwordHash,
+        role: ROLES.USER,
       });
-      if (!user) {
-        user = await User.create({
-          name: userToVerify.name,
-          phone: userToVerify.phone,
-          role: ROLES.USER,
-        });
-      }
 
       const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
         expiresIn: '7d',
       });
+
+      delete usersToVerify[phone];
 
       return res.send({ ...user.dataValues, accessToken });
     }
@@ -117,7 +127,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
   }
 };
 
-export const getAll = async (req: Request, res: Response, next: NextFunction) => {
+const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await User.findAll();
 
@@ -127,7 +137,7 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const update = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const update = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
@@ -178,6 +188,30 @@ export const update = async (req: RequestWithUser, res: Response, next: NextFunc
   }
 };
 
+const getOne = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOne({
+      where: { id },
+      include: [
+        {
+          model: Game,
+          as: 'games',
+          include: [{ model: Stadion, as: 'stadion' }],
+          order: [
+            ['startTime', 'DESC'],
+            ['playersCount', 'DESC'],
+          ],
+        },
+      ],
+    });
+
+    res.send(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
@@ -185,4 +219,5 @@ export default {
   getAll,
   code,
   update,
+  getOne,
 };

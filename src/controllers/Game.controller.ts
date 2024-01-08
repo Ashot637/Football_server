@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Facilitie, Game, Stadion, User, UserGame, Guest } from '../models';
 import { type RequestWithUser } from '../types/RequestWithUser';
-import { Op } from 'sequelize';
+import { Op, type WhereOptions } from 'sequelize';
 
 interface CreateRequest {
   price: number;
@@ -41,7 +41,7 @@ const getAll = async (
 ) => {
   try {
     const { date, language } = req.query;
-    let WHERE: { where?: { startTime: { [Op.between]: Date[] } } } = {};
+    let WHERE: WhereOptions | undefined;
     if (date) {
       const day = new Date(date);
       const startOfDay = new Date(
@@ -52,9 +52,18 @@ const getAll = async (
       );
       WHERE = {
         where: {
-          startTime: {
-            [Op.between]: [startOfDay, endOfDay],
-          },
+          [Op.and]: [
+            {
+              startTime: {
+                [Op.between]: [startOfDay, endOfDay],
+              },
+            },
+            {
+              startTime: {
+                [Op.gt]: new Date(),
+              },
+            },
+          ],
         },
       };
     }
@@ -62,7 +71,15 @@ const getAll = async (
     let games;
     if (language) {
       games = await Game.findAll({
-        ...(date ? WHERE : {}),
+        ...(date
+          ? WHERE
+          : {
+              where: {
+                startTime: {
+                  [Op.gt]: new Date(),
+                },
+              },
+            }),
         include: [
           {
             model: Stadion,
@@ -75,10 +92,18 @@ const getAll = async (
             ],
           },
         ],
+        order: [
+          ['playersCount', 'DESC'],
+          ['startTime', 'DESC'],
+        ],
       });
     } else {
       games = await Game.findAll({
         include: [{ model: Stadion, as: 'stadion' }],
+        order: [
+          ['startTime', 'DESC'],
+          ['playersCount', 'DESC'],
+        ],
       });
     }
 
@@ -262,6 +287,7 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
       userId,
       gameId: +gameId,
       team: +team,
+      uniform,
     });
 
     let guestsArray = [];
@@ -431,8 +457,20 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
     game.playersCount = --game.playersCount! - deletedGuestCount;
     if (gameToCancel.team === 1) {
       game.playersCountFirstGroup = --game.playersCountFirstGroup! - deletedGuestCount;
+      game.uniformsFirstGroup = game.uniformsFirstGroup?.map((currentUniform, index) => {
+        if (index === gameToCancel.uniform) {
+          return --currentUniform - deletedGuestCount;
+        }
+        return currentUniform;
+      });
     } else {
       game.playersCountSecondGroup = --game.playersCountSecondGroup! - deletedGuestCount;
+      game.uniformsSecondGroup = game.uniformsSecondGroup?.map((currentUniform, index) => {
+        if (index === gameToCancel.uniform) {
+          return --currentUniform - deletedGuestCount;
+        }
+        return currentUniform;
+      });
     }
 
     game.save();

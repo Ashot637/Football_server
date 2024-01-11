@@ -121,6 +121,9 @@ const getByStadionId = async (req: Request, res: Response, next: NextFunction) =
     const games = await Game.findAll({
       where: {
         stadionId,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
       },
       include: [
         {
@@ -133,6 +136,10 @@ const getByStadionId = async (req: Request, res: Response, next: NextFunction) =
             'img',
           ],
         },
+      ],
+      order: [
+        ['playersCount', 'DESC'],
+        ['startTime', 'DESC'],
       ],
     });
 

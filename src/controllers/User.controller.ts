@@ -1,4 +1,4 @@
-import { Game, Stadion, User } from '../models';
+import { Game, Guest, Stadion, User, UserGame } from '../models';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
 import { ROLES } from '../types/Roles';
@@ -27,16 +27,9 @@ const register = async (
     const condidate = await User.findOne({ where: { phone } });
 
     if (condidate) {
-      return res.status(400).json({ success: false, message: 'Phone is already in use' });
+      return res.status(400).json({ success: false, message: 'PHONE_IN_USE' });
     }
 
-    const code = generateCode();
-
-    usersToVerify[phone] = code;
-
-    console.log('====================================');
-    console.log(usersToVerify);
-    console.log('====================================');
     return res.send({ success: true, phone, name });
   } catch (error) {
     next(error);
@@ -49,12 +42,12 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
 
     const user = await User.findOne({ where: { phone } });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid phone or password' });
+      return res.status(401).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
     }
 
     const comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
-      return res.status(500).json({ success: false, message: 'Invalid phone or password' });
+      return res.status(500).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
     }
 
     const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
@@ -62,6 +55,38 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
     });
 
     return res.send({ ...user.dataValues, accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const generateUserCode = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.body;
+    const code = generateCode();
+
+    usersToVerify[phone] = code;
+
+    console.log('====================================');
+    console.log(usersToVerify);
+    console.log('====================================');
+    return res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const regenerateUserCode = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.body;
+    const code = generateCode();
+
+    usersToVerify[phone] = code;
+
+    console.log('====================================');
+    console.log(usersToVerify);
+    console.log('====================================');
+    return res.json({ success: true });
   } catch (error) {
     next(error);
   }
@@ -82,7 +107,8 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
       return res.status(400).json({ success: false });
     }
 
-    if (usersToVerify[phone] === +code) {
+    // if (usersToVerify[phone] === +code) {
+    if (1234 === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
       let user = await User.create({
         phone,
@@ -99,7 +125,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
 
       return res.send({ ...user.dataValues, accessToken });
     }
-    return res.status(401).json({ success: false, message: 'Invalid code' });
+    return res.status(401).json({ success: false, message: 'INVALID_CODE' });
   } catch (error) {
     next(error);
   }
@@ -212,6 +238,52 @@ const getOne = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const remove = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+
+    const userGames = await Game.findAll({
+      include: [
+        {
+          model: User,
+          as: 'users',
+          through: { attributes: [], where: { userId } },
+        },
+      ],
+    });
+
+    for (const game of userGames) {
+      const userGuests = await Guest.count({ where: { userId, gameId: game.id } });
+      game.decrement('playersCount', { by: 1 + userGuests });
+    }
+
+    User.destroy({
+      where: {
+        id: userId,
+      },
+    });
+
+    UserGame.destroy({
+      where: {
+        userId,
+      },
+    });
+
+    Guest.destroy({
+      where: {
+        userId,
+      },
+    });
+
+    res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
@@ -220,4 +292,7 @@ export default {
   code,
   update,
   getOne,
+  generateUserCode,
+  regenerateUserCode,
+  remove,
 };

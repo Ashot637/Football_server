@@ -204,7 +204,31 @@ const getOne = async (
       return res.status(404).json({ success: false, message: 'Game not found' });
     }
 
-    res.send(game);
+    const playersCountFirstGroup = await UserGame.count({ where: { gameId: id, team: 1 } });
+    const playersCountSecondGroup = await UserGame.count({ where: { gameId: id, team: 2 } });
+    const guestsCountFirstGroup = await Guest.count({ where: { gameId: id, team: 1 } });
+    const guestsCountSecondGroup = await Guest.count({ where: { gameId: id, team: 2 } });
+
+    const userGames = await UserGame.findAll({ where: { gameId: id } });
+
+    let uniformsFirstGroup = [0, 0, 0, 0];
+    let uniformsSecondGroup = [0, 0, 0, 0];
+
+    userGames.forEach((userGame) => {
+      if (userGame.team === 1) {
+        uniformsFirstGroup[userGame.uniform] = ++uniformsFirstGroup[userGame.uniform];
+      } else {
+        uniformsSecondGroup[userGame.uniform] = ++uniformsSecondGroup[userGame.uniform];
+      }
+    });
+
+    res.send({
+      ...game.dataValues,
+      playersCountFirstGroup: playersCountFirstGroup + guestsCountFirstGroup,
+      playersCountSecondGroup: playersCountSecondGroup + guestsCountSecondGroup,
+      uniformsFirstGroup,
+      uniformsSecondGroup,
+    });
   } catch (error) {
     next(error);
   }
@@ -306,23 +330,6 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
     }
 
     game.playersCount = ++game.playersCount! + guestsArray.length;
-    if (team === 1) {
-      game.playersCountFirstGroup = ++game.playersCountFirstGroup! + guestsArray.length;
-      game.uniformsFirstGroup = game.uniformsFirstGroup?.map((currentUniform, index) => {
-        if (index === uniform) {
-          return ++currentUniform + guestsArray.length;
-        }
-        return currentUniform;
-      });
-    } else {
-      game.playersCountSecondGroup = ++game.playersCountSecondGroup! + guestsArray.length;
-      game.uniformsSecondGroup = game.uniformsSecondGroup?.map((currentUniform, index) => {
-        if (index === uniform) {
-          return ++currentUniform + guestsArray.length;
-        }
-        return currentUniform;
-      });
-    }
 
     await game.save();
 
@@ -396,24 +403,46 @@ const getActivity = async (req: RequestWithUser, res: Response, next: NextFuncti
     const { id: userId } = req.user;
     const { language } = req.query;
 
-    const games = await Game.findAll({
-      include: [
-        {
-          model: User,
-          as: 'users',
-          through: { attributes: [], where: { userId } },
-        },
-        {
-          model: Stadion,
-          as: 'stadion',
-          attributes: [[`title_${language}`, `title`]],
-        },
-      ],
+    const userGames = await UserGame.findAll({
       where: {
+        userId,
+      },
+    });
+
+    if (!userGames) {
+      return res.status(404).json({ success: false, message: 'Games not found' });
+    }
+
+    if (!userGames.length) {
+      return res.json([]);
+    }
+
+    const gameIds = userGames.map((userGame) => userGame.gameId);
+
+    const games = await Game.findAll({
+      where: {
+        id: gameIds,
         startTime: {
           [Op.lt]: new Date(),
         },
       },
+      include: [
+        {
+          model: User,
+          as: 'users',
+          where: {
+            id: userId,
+          },
+        },
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+          ],
+        },
+      ],
     });
 
     res.send(games);
@@ -462,23 +491,6 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
     });
 
     game.playersCount = --game.playersCount! - deletedGuestCount;
-    if (gameToCancel.team === 1) {
-      game.playersCountFirstGroup = --game.playersCountFirstGroup! - deletedGuestCount;
-      game.uniformsFirstGroup = game.uniformsFirstGroup?.map((currentUniform, index) => {
-        if (index === gameToCancel.uniform) {
-          return --currentUniform - deletedGuestCount;
-        }
-        return currentUniform;
-      });
-    } else {
-      game.playersCountSecondGroup = --game.playersCountSecondGroup! - deletedGuestCount;
-      game.uniformsSecondGroup = game.uniformsSecondGroup?.map((currentUniform, index) => {
-        if (index === gameToCancel.uniform) {
-          return --currentUniform - deletedGuestCount;
-        }
-        return currentUniform;
-      });
-    }
 
     game.save();
 

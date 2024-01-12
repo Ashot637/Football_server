@@ -23,11 +23,7 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
   public startTime!: Date;
   public endTime!: Date;
   public playersCount?: number;
-  public playersCountFirstGroup?: number;
-  public playersCountSecondGroup?: number;
   public maxPlayersCount!: number;
-  public uniformsFirstGroup?: number[];
-  public uniformsSecondGroup?: number[];
   public stadionId!: number;
 
   public readonly createdAt!: Date;
@@ -41,11 +37,7 @@ Game.init(
     startTime: { type: DataTypes.DATE },
     endTime: { type: DataTypes.DATE },
     playersCount: { type: DataTypes.INTEGER, defaultValue: 0 },
-    playersCountFirstGroup: { type: DataTypes.INTEGER, defaultValue: 0 },
-    playersCountSecondGroup: { type: DataTypes.INTEGER, defaultValue: 0 },
     maxPlayersCount: { type: DataTypes.INTEGER },
-    uniformsFirstGroup: { type: DataTypes.ARRAY(DataTypes.INTEGER), defaultValue: [0, 0, 0, 0] },
-    uniformsSecondGroup: { type: DataTypes.ARRAY(DataTypes.INTEGER), defaultValue: [0, 0, 0, 0] },
     stadionId: { type: DataTypes.INTEGER },
   },
   {

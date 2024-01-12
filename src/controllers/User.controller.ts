@@ -245,19 +245,25 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
     const { id: userId } = req.user;
 
-    const userGames = await Game.findAll({
-      include: [
-        {
-          model: User,
-          as: 'users',
-          through: { attributes: [], where: { userId } },
-        },
-      ],
+    const userGames = await UserGame.findAll({
+      where: {
+        userId,
+      },
     });
 
-    for (const game of userGames) {
-      const userGuests = await Guest.count({ where: { userId, gameId: game.id } });
-      game.decrement('playersCount', { by: 1 + userGuests });
+    if (userGames?.length) {
+      const gameIds = userGames.map((userGame) => userGame.gameId);
+
+      const games = await Game.findAll({
+        where: {
+          id: gameIds,
+        },
+      });
+
+      for (const game of games) {
+        const userGuests = await Guest.count({ where: { userId, gameId: game.id } });
+        game.decrement('playersCount', { by: 1 + userGuests });
+      }
     }
 
     User.destroy({

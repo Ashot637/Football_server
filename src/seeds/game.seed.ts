@@ -1,4 +1,4 @@
-import { Game } from '../models';
+import { Game, Group } from '../models';
 
 const games = [
   {
@@ -42,4 +42,10 @@ export default () => {
   for (const item of games) {
     Game.create(item);
   }
+  Group.create({
+    gameId: 1,
+  });
+  Group.create({
+    gameId: 2,
+  });
 };

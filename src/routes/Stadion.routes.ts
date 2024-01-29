@@ -1,12 +1,15 @@
 import Router from 'express';
 import { StadionController } from '../controllers';
+import { ROLES } from '../types/Roles';
+import checkRole from '../middlewares/checkRole';
 const router = Router();
 
-router.post('/stadion/create', StadionController.create);
 router.get('/stadion/getAll', StadionController.getAll);
 router.get('/stadion/getOne/:id', StadionController.getOne);
 router.get('/stadion/search', StadionController.search);
-router.delete('/stadion/delete', StadionController.remove);
-router.patch('/stadion/update/:id', StadionController.update);
+
+router.post('/stadion/create', checkRole(ROLES.ADMIN), StadionController.create);
+router.delete('/stadion/delete', checkRole(ROLES.ADMIN), StadionController.remove);
+router.patch('/stadion/update/:id', checkRole(ROLES.ADMIN), StadionController.update);
 
 export default router;

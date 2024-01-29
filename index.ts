@@ -1,16 +1,28 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { Server, type Socket } from 'socket.io';
+
 import express from 'express';
+import http from 'http';
 import sequelize from './src/db';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import path from 'path';
 import fileUpload from 'express-fileupload';
 import errorHandler from './src/middlewares/errorHandler';
-import { GameRouter, StadionRouter, UserRouter, FacilitieRouter } from './src/routes';
+import {
+  GameRouter,
+  StadionRouter,
+  UserRouter,
+  FacilitieRouter,
+  MessageRouter,
+} from './src/routes';
+
+import { groupsSocket, userSockets } from './src/sockets/userSockets';
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -21,14 +33,58 @@ app.use('/api/v2/', UserRouter);
 app.use('/api/v2/', StadionRouter);
 app.use('/api/v2/', GameRouter);
 app.use('/api/v2/', FacilitieRouter);
+app.use('/api/v2/', MessageRouter);
 
 app.use(errorHandler);
+
+const io = new Server(server);
+
+(global as typeof globalThis & { io: Server }).io = io;
+
+io.on('connection', (socket: Socket) => {
+  socket.on('user-connected', (userId) => {
+    userSockets.set(userId, socket);
+    console.log(userId + ' Connected');
+  });
+
+  socket.on('user-disconnected', (userId) => {
+    userSockets.delete(userId);
+    groupsSocket.forEach((value, key) => {
+      const newArr = value.filter((id: number) => +id === +userId);
+      groupsSocket.set(key, newArr);
+    });
+    console.log(userId + ' Disconnected');
+  });
+
+  socket.on('join-group', ({ groupId, userId }) => {
+    socket.join(groupId);
+    console.log('joined to group' + groupId);
+    if (!groupsSocket.has(groupId)) {
+      groupsSocket.set(groupId, [userId]);
+    } else {
+      groupsSocket.set(groupId, [...groupsSocket.get(groupId), userId]);
+    }
+  });
+
+  socket.on('leave-group', ({ groupId, userId }) => {
+    socket.leave(groupId);
+    console.log('leaved from group' + groupId);
+    if (groupsSocket.has(groupId)) {
+      const currentArray = groupsSocket.get(groupId);
+      const newArray = currentArray.filter((id: number) => id !== userId);
+
+      groupsSocket.set(groupId, newArray);
+    }
+  });
+
+  socket.on('disconnect', () => {});
+});
 
 const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
-    app.listen(process.env.PORT || 8080, () => console.log('Server OK'));
+    server.listen(process.env.PORT || 8080, () => console.log('Server OK'));
   } catch (e) {
     console.log(e);
   }

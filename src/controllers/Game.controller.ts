@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Facilitie, Game, Stadion, User, UserGame, Guest } from '../models';
+import { Facilitie, Game, Stadion, User, UserGame, Guest, Group, UserGroup } from '../models';
 import { type RequestWithUser } from '../types/RequestWithUser';
 import { Op, type WhereOptions } from 'sequelize';
 
@@ -21,6 +21,10 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
       endTime,
       maxPlayersCount,
       stadionId,
+    });
+
+    Group.create({
+      gameId: game.id,
     });
 
     res.send(game);
@@ -300,7 +304,9 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
     const { gameId } = req.params;
     const { team, uniform, guests } = req.body;
 
-    const game = await Game.findByPk(gameId);
+    const game = await Game.findByPk(gameId, {
+      include: { model: Group, as: 'group', attributes: ['id'] },
+    });
 
     if (!game) {
       return res.status(404).json({ success: false, message: 'Game not found' });
@@ -332,6 +338,11 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
     game.playersCount = ++game.playersCount! + guestsArray.length;
 
     await game.save();
+
+    UserGroup.create({
+      groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
+      userId,
+    });
 
     res.send({ success: true, userGame });
   } catch (error) {
@@ -459,7 +470,9 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id: userId } = req.user;
     const { gameId } = req.params;
 
-    const game = await Game.findByPk(gameId);
+    const game = await Game.findByPk(gameId, {
+      include: { model: Group, as: 'group', attributes: ['id'] },
+    });
 
     if (!game) {
       return res.status(404).json({ success: false, message: 'Game not found' });
@@ -493,6 +506,13 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
     game.playersCount = --game.playersCount! - deletedGuestCount;
 
     game.save();
+
+    UserGroup.destroy({
+      where: {
+        userId,
+        groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
+      },
+    });
 
     res.send({ success: true });
   } catch (error) {

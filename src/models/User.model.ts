@@ -7,9 +7,11 @@ interface UserAttributes {
   name: string;
   phone: string;
   password: string;
+  expoPushToken?: string;
   email?: string;
   address?: string;
   img?: string;
+  hasMessage?: boolean;
   role: ROLES;
 }
 
@@ -20,10 +22,12 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public name!: string;
   public phone!: string;
   public password!: string;
-  public role!: ROLES;
+  public expoPushToken?: string;
   public email?: string;
   public address?: string;
   public img?: string;
+  public hasMessage?: boolean;
+  public role!: ROLES;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -35,9 +39,11 @@ User.init(
     name: { type: DataTypes.STRING, allowNull: false },
     phone: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
+    expoPushToken: { type: DataTypes.STRING, allowNull: true },
     email: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
     address: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
     img: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
+    hasMessage: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
     role: { type: DataTypes.STRING, defaultValue: 'USER' },
   },
   {

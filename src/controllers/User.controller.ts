@@ -13,6 +13,7 @@ interface RegisterRequest {
   name: string;
   phone: string;
   password: string;
+  expoPushToken: string;
 }
 
 const usersToVerify: Record<string, number> = {};
@@ -38,7 +39,7 @@ const register = async (
 
 const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next: NextFunction) => {
   try {
-    const { phone, password } = req.body;
+    const { phone, password, expoPushToken } = req.body;
 
     const user = await User.findOne({ where: { phone } });
     if (!user) {
@@ -53,6 +54,9 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
     const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
       expiresIn: '7d',
     });
+
+    user.expoPushToken = expoPushToken;
+    user.save();
 
     return res.send({ ...user.dataValues, accessToken });
   } catch (error) {
@@ -97,11 +101,12 @@ interface CodeRequest {
   code: string;
   name: string;
   password: string;
+  expoPushToken: string;
 }
 
 const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: NextFunction) => {
   try {
-    const { phone, code, name, password } = req.body;
+    const { phone, code, name, password, expoPushToken } = req.body;
 
     if (!usersToVerify[phone]) {
       return res.status(400).json({ success: false });
@@ -113,6 +118,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
       let user = await User.create({
         phone,
         name,
+        expoPushToken,
         password: passwordHash,
         role: ROLES.USER,
       });
@@ -137,6 +143,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
+    const { expoPushToken } = req.query;
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -146,6 +153,8 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
       expiresIn: '7d',
     });
+
+    (user.expoPushToken = expoPushToken as string), user.save();
 
     res.send({ ...user.dataValues, accessToken });
   } catch (error) {

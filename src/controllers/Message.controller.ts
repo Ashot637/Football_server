@@ -316,13 +316,11 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
       MessageLikes.create({ messageId, userId });
 
       const onlineUsers = groupsSocket.get(groupId);
-      if (messageOwnerId !== userId && !onlineUsers.includes(messageOwnerId)) {
+      if (messageOwnerId !== userId) {
+        const user = await User.findByPk(messageOwnerId);
         const courier = new CourierClient({
           authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
         });
-
-        const user = await User.findByPk(messageOwnerId);
-
         await courier.send({
           message: {
             to: {
@@ -340,11 +338,13 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
           },
         });
 
-        User.update({ hasMessage: true }, { where: { id: messageOwnerId } });
-        const userSocket = userSockets.get(messageOwnerId);
-        if (userSocket) {
-          userSocket.emit('user-new-message');
-          userSocket.emit('group-new-message', groupId);
+        if (!onlineUsers.includes(messageOwnerId)) {
+          User.update({ hasMessage: true }, { where: { id: messageOwnerId } });
+          const userSocket = userSockets.get(messageOwnerId);
+          if (userSocket) {
+            userSocket.emit('user-new-message');
+            userSocket.emit('group-new-message', groupId);
+          }
         }
       }
     }

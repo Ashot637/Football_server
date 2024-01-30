@@ -300,7 +300,7 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const { messageId, groupId } = req.body;
+    const { messageId, groupId, messageOwnerId, groupTitle, userName } = req.body;
 
     const user = await User.findByPk(userId, {
       attributes: ['id', 'name', 'img'],
@@ -314,6 +314,39 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
       existingReaction.destroy();
     } else {
       MessageLikes.create({ messageId, userId });
+
+      const onlineUsers = groupsSocket.get(groupId);
+      if (messageOwnerId !== userId && !onlineUsers.includes(messageOwnerId)) {
+        const courier = new CourierClient({
+          authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
+        });
+
+        const user = await User.findByPk(messageOwnerId);
+
+        await courier.send({
+          message: {
+            to: {
+              //@ts-ignore
+              expo: {
+                token: user?.expoPushToken,
+              },
+            },
+            template: '992NM6VJF7MNVAHDCV54CHZQSEZH',
+            data: {
+              groupTitle,
+              userName,
+              text: 'Liked your message',
+            },
+          },
+        });
+
+        User.update({ hasMessage: true }, { where: { id: messageOwnerId } });
+        const userSocket = userSockets.get(messageOwnerId);
+        if (userSocket) {
+          userSocket.emit('user-new-message');
+          userSocket.emit('group-new-message', groupId);
+        }
+      }
     }
 
     const userSocket = userSockets.get(userId);

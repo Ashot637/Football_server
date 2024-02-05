@@ -154,7 +154,8 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       expiresIn: '7d',
     });
 
-    (user.expoPushToken = expoPushToken as string), user.save();
+    user.expoPushToken = expoPushToken as string;
+    user.save();
 
     res.send({ ...user.dataValues, accessToken });
   } catch (error) {
@@ -247,6 +248,25 @@ const getOne = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const logout = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id } = req.user;
+
+    User.update(
+      {
+        expoPushToken: '',
+      },
+      { where: { id } },
+    );
+    res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const remove = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
@@ -309,5 +329,6 @@ export default {
   getOne,
   generateUserCode,
   regenerateUserCode,
+  logout,
   remove,
 };

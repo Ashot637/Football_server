@@ -193,7 +193,10 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       }
     });
 
-    const usersToSend = users.map((user) => user.expoPushToken);
+    const usersToSend = users.reduce((acc, user) => {
+      if (user.expoPushToken) acc.push(user.expoPushToken);
+      return acc;
+    }, [] as string[]);
 
     const courier = new CourierClient({
       authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
@@ -234,7 +237,6 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     };
 
     userSocket.broadcast.to(groupId).emit('new-message', messageData);
-    // userSocket.broadcast.to(groupId).emit('new-message-in-group', groupId);
 
     Group.update(
       {

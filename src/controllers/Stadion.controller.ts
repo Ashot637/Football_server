@@ -60,6 +60,27 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const getAllForUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { language } = req.query;
+
+    const stadions = await Stadion.findAll({
+      attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'id', 'img'],
+      include: [
+        {
+          model: Facilitie,
+          as: 'facilities',
+          attributes: [[`title_${language}`, `title`], 'id', 'img'],
+        },
+      ],
+    });
+
+    res.send(stadions);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const search = async (req: Request, res: Response, next: NextFunction) => {
   let { term, language } = req.query;
   term = term || '';
@@ -178,4 +199,5 @@ export default {
   remove,
   update,
   search,
+  getAllForUser,
 };

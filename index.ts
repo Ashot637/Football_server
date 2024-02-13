@@ -27,6 +27,7 @@ const server = http.createServer(app);
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static(path.resolve(__dirname, 'src', 'static')));
+app.use(express.static(path.resolve(__dirname, 'src', 'public')));
 app.use(fileUpload({}));
 
 app.use('/api/v2/', UserRouter);

@@ -10,7 +10,7 @@ router.post('/auth/login', UserController.login);
 router.post('/auth/generateCode', UserController.generateUserCode);
 router.post('/auth/resend', UserController.regenerateUserCode);
 router.post('/auth/verifyCode', UserController.code);
-router.post('/auth/logout', UserController.logout);
+router.post('/auth/logout', checkRole(ROLES.USER), UserController.logout);
 
 router.delete('/user/remove', checkRole(ROLES.USER), UserController.remove);
 router.patch('/user/update', checkRole(ROLES.USER), UserController.update);

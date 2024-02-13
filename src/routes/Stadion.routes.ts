@@ -5,6 +5,7 @@ import checkRole from '../middlewares/checkRole';
 const router = Router();
 
 router.get('/stadion/getAll', StadionController.getAll);
+router.get('/stadion/getAllForUser', StadionController.getAllForUser);
 router.get('/stadion/getOne/:id', StadionController.getOne);
 router.get('/stadion/search', StadionController.search);
 

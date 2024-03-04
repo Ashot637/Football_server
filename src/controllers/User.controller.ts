@@ -1,4 +1,4 @@
-import { Game, Guest, Stadion, User, UserGame } from '../models';
+import { Game, Invitation, Stadion, User, UserGame } from '../models';
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
 import { ROLES } from '../types/Roles';
@@ -41,7 +41,15 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
   try {
     const { phone, password, expoPushToken } = req.body;
 
-    const user = await User.findOne({ where: { phone } });
+    const user = await User.findOne({
+      where: { phone },
+      include: [
+        {
+          model: Invitation,
+          as: 'invitations',
+        },
+      ],
+    });
     if (!user) {
       return res.status(401).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
     }
@@ -115,13 +123,25 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
     // if (usersToVerify[phone] === +code) {
     if (1234 === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
-      let user = await User.create({
+      let newUser = await User.create({
         phone,
         name,
         expoPushToken,
         password: passwordHash,
         role: ROLES.USER,
       });
+
+      let user = await User.findByPk(newUser.id, {
+        include: [
+          {
+            model: Invitation,
+            as: 'invitations',
+          },
+        ],
+      });
+      if (!user) {
+        return;
+      }
 
       const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
         expiresIn: '7d',
@@ -145,7 +165,14 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id } = req.user;
     const { expoPushToken } = req.query;
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      include: [
+        {
+          model: Invitation,
+          as: 'invitations',
+        },
+      ],
+    });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -274,6 +301,12 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
     const { id: userId } = req.user;
 
+    await User.destroy({
+      where: {
+        id: userId,
+      },
+    });
+
     const userGames = await UserGame.findAll({
       where: {
         userId,
@@ -290,34 +323,41 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
       });
 
       for (const game of games) {
-        const userGuests = await Guest.count({ where: { userId, gameId: game.id } });
-        game.decrement('playersCount', { by: 1 + userGuests });
+        game.decrement('playersCount', { by: 1 });
       }
     }
 
-    User.destroy({
-      where: {
-        id: userId,
-      },
-    });
-
-    UserGame.destroy({
+    await UserGame.destroy({
       where: {
         userId,
       },
     });
 
-    Guest.destroy({
-      where: {
-        userId,
-      },
-    });
-
-    res.send({ success: true });
+    return res.send({ success: true });
   } catch (error) {
     next(error);
   }
 };
+
+// const updateStatus = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ success: false, message: 'Not authenticated' });
+//     }
+//     const { id } = req.user;
+//     const { isOrganizer } = req.body;
+
+//     await User.update(
+//       {
+//         isOrganizer,
+//       },
+//       { where: { id } },
+//     );
+//     return res.send({ success: true });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 export default {
   register,
@@ -331,4 +371,5 @@ export default {
   regenerateUserCode,
   logout,
   remove,
+  // updateStatus,
 };

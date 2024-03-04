@@ -14,6 +14,7 @@ router.post('/auth/logout', checkRole(ROLES.USER), UserController.logout);
 
 router.delete('/user/remove', checkRole(ROLES.USER), UserController.remove);
 router.patch('/user/update', checkRole(ROLES.USER), UserController.update);
+// router.post('/user/updateStatus', checkRole(ROLES.USER), UserController.updateStatus);
 
 router.get('/user/getAll', checkRole(ROLES.ADMIN), UserController.getAll);
 router.get('/user/getOne/:id', checkRole(ROLES.ADMIN), UserController.getOne);

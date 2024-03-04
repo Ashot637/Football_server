@@ -7,12 +7,11 @@ interface GameAttributes {
   startTime: Date;
   endTime: Date;
   playersCount?: number;
-  playersCountFirstGroup?: number;
-  playersCountSecondGroup?: number;
   maxPlayersCount: number;
-  uniformsFirstGroup?: number[];
-  uniformsSecondGroup?: number[];
   stadionId: number;
+  isPublic?: boolean;
+  groupId: number;
+  creatorId?: number;
 }
 
 interface GameCreationAttributes extends Optional<GameAttributes, 'id'> {}
@@ -25,6 +24,9 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
   public playersCount?: number;
   public maxPlayersCount!: number;
   public stadionId!: number;
+  public isPublic!: boolean;
+  public groupId!: number;
+  public creatorId?: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -39,6 +41,9 @@ Game.init(
     playersCount: { type: DataTypes.INTEGER, defaultValue: 0 },
     maxPlayersCount: { type: DataTypes.INTEGER },
     stadionId: { type: DataTypes.INTEGER },
+    isPublic: { type: DataTypes.BOOLEAN, defaultValue: true },
+    groupId: { type: DataTypes.INTEGER },
+    creatorId: { type: DataTypes.INTEGER, defaultValue: 0 },
   },
   {
     sequelize,

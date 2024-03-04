@@ -7,6 +7,7 @@ const games = [
     maxPlayersCount: 14,
     stadionId: 1,
     price: 3000,
+    groupId: 1,
   },
   {
     startTime: new Date(Date.now() + 1500000000),
@@ -14,38 +15,18 @@ const games = [
     maxPlayersCount: 16,
     stadionId: 1,
     price: 5000,
-  },
-  {
-    startTime: new Date(),
-    endTime: new Date(),
-    maxPlayersCount: 18,
-    stadionId: 2,
-    price: 2500,
-  },
-  {
-    startTime: new Date(),
-    endTime: new Date(),
-    maxPlayersCount: 18,
-    stadionId: 2,
-    price: 8000,
-  },
-  {
-    startTime: new Date(),
-    endTime: new Date(),
-    maxPlayersCount: 18,
-    stadionId: 2,
-    price: 5000,
+    groupId: 1,
   },
 ] as Game[];
 
 export default () => {
-  for (const item of games) {
-    Game.create(item);
-  }
-  Group.create({
-    gameId: 1,
-  });
-  Group.create({
-    gameId: 2,
-  });
+  // Group.create({
+  //   id: 1,
+  // });
+  // Group.create({
+  //   id: 2,
+  // });
+  // for (const item of games) {
+  //   Game.create(item);
+  // }
 };

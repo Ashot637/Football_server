@@ -13,22 +13,30 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
     const { id: userId } = req.user;
     const { language } = req.query;
 
-    const userGames = await UserGame.findAll({
+    // const userGames = await UserGame.findAll({
+    //   where: {
+    //     userId,
+    //   },
+    //   attributes: ['gameId'],
+    // });
+
+    // if (!userGames?.length) {
+    //   return res.json([]);
+    // }
+
+    // const gameIds = userGames.map((userGame) => userGame.gameId);
+
+    const userGroups = await UserGroup.findAll({
       where: {
         userId,
       },
-      attributes: ['gameId'],
     });
 
-    if (!userGames?.length) {
-      return res.json([]);
-    }
-
-    const gameIds = userGames.map((userGame) => userGame.gameId);
+    const groupIds = [...new Set(userGroups.map((group) => group.groupId))];
 
     const groups = await Group.findAll({
       where: {
-        gameId: gameIds,
+        id: groupIds,
       },
       include: [
         {
@@ -62,6 +70,7 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
 
     const groupsWithNewMessages = groups.map((group) => ({
       ...group.toJSON(),
+      game: (group as unknown as { game: Game[] }).game[0],
       isNewMessage:
         group.dataValues.lastMessageTimestamp! >
         (group as Group & { dataValues: { lastSeenMessageTime: Date } }).dataValues
@@ -90,22 +99,17 @@ const getGroupMessages = async (req: RequestWithUser, res: Response, next: NextF
       return res.status(404).send({ success: false, messages: 'Group not found' });
     }
 
-    const userGames = await UserGame.findAll({
+    const userGroups = await UserGroup.findAll({
       where: {
         userId,
       },
-      attributes: ['gameId'],
     });
 
-    if (!userGames?.length) {
-      return res.status(403).json({ success: false, message: 'User dont contain in group' });
-    }
-
-    const gameIds = userGames.map((userGame) => userGame.gameId);
+    const groupIds = [...new Set(userGroups.map((group) => group.groupId))];
 
     const groups = await Group.findAll({
       where: {
-        gameId: gameIds,
+        id: groupIds,
       },
     });
 
@@ -147,22 +151,17 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     const { id: userId } = req.user;
     const { text, groupId, id, userName, groupTitle } = req.body;
 
-    const userGames = await UserGame.findAll({
+    const userGroups = await UserGroup.findAll({
       where: {
         userId,
       },
-      attributes: ['gameId'],
     });
 
-    if (!userGames?.length) {
-      return res.status(403).json({ success: false, message: "User doesn't belong to any group" });
-    }
-
-    const gameIds = userGames.map((userGame) => userGame.gameId);
+    const groupIds = [...new Set(userGroups.map((group) => group.groupId))];
 
     const groups = await Group.findAll({
       where: {
-        gameId: gameIds,
+        id: groupIds,
       },
     });
 
@@ -172,15 +171,16 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
         .json({ success: false, message: "User doesn't belong to the specified group" });
     }
 
-    const GroupWithUsers = (await Group.findByPk(+groupId, {
+    const GroupWithUsers: any = await Group.findByPk(+groupId, {
       include: [{ model: Game, as: 'game', include: [{ model: User, as: 'users' }] }],
-    })) as Group & { dataValues: { game: Game & { dataValues: { users: User[] } } } };
+    });
+    //  as Group & { dataValues: { game: Game[] & { dataValues: { users: User[] } } } };
 
-    const users = GroupWithUsers?.dataValues.game.dataValues.users;
+    const users = GroupWithUsers?.dataValues.game[0].dataValues.users;
 
     const onlineUserIds: number[] = groupsSocket.get(groupId) || [];
 
-    const allUserIds = users.map((u) => u.id);
+    const allUserIds: number[] = users.map((u: { id: number }) => u.id);
 
     const oflineUsers = allUserIds.filter((id) => !onlineUserIds.includes(id));
 
@@ -193,7 +193,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       }
     });
 
-    const usersToSend = users.reduce((acc, user) => {
+    const usersToSend = users.reduce((acc: string[], user: User) => {
       if (user.expoPushToken) acc.push(user.expoPushToken);
       return acc;
     }, [] as string[]);

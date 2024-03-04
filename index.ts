@@ -5,6 +5,7 @@ import { Server, type Socket } from 'socket.io';
 
 import express from 'express';
 import http from 'http';
+import IP from 'ip';
 import sequelize from './src/db';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -30,6 +31,11 @@ app.use(express.static(path.resolve(__dirname, 'src', 'static')));
 app.use(express.static(path.resolve(__dirname, 'src', 'public')));
 app.use(fileUpload({}));
 
+app.set('trust proxy', true);
+app.get('/ip', (req, res) => {
+  const ipAddress = req.headers['x-forwarded-for'];
+  res.send(ipAddress);
+});
 app.use('/api/v2/', UserRouter);
 app.use('/api/v2/', StadionRouter);
 app.use('/api/v2/', GameRouter);

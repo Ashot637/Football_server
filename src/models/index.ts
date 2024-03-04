@@ -4,11 +4,11 @@ import Stadion from './Stadion.model';
 import UserGame from './UserGame.model';
 import Facilitie from './Facilitie.model';
 import StadionFacilitie from './StadionFacilitie.model';
-import Guest from './Guest.model';
 import Group from './Group.model';
 import Message from './Message.model';
 import UserGroup from './UserGroup.model';
 import MessageLikes from './MessageLikes.model';
+import Invitation from './Invitation.model';
 
 Stadion.hasMany(Game, { foreignKey: 'stadionId' });
 Game.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
@@ -27,13 +27,16 @@ Facilitie.belongsToMany(Stadion, {
   as: 'stadions',
 });
 
-Game.hasMany(Guest, { as: 'guests', foreignKey: 'gameId' });
-Guest.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
+Game.hasMany(Invitation, { as: 'invitations', foreignKey: 'gameId' });
+Invitation.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
+
+User.hasMany(Invitation, { as: 'invitations', foreignKey: 'phone', sourceKey: 'phone' });
+Invitation.belongsTo(User, { as: 'user', foreignKey: 'phone', targetKey: 'phone' });
 
 // Messages
 
-Game.hasOne(Group, { as: 'group', foreignKey: 'gameId' });
-Group.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
+Group.hasMany(Game, { as: 'game', foreignKey: 'groupId' });
+Game.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });
 
 Group.belongsToMany(User, { through: UserGroup, foreignKey: 'groupId' });
 User.belongsToMany(Group, { through: UserGroup, foreignKey: 'gameId' });
@@ -47,4 +50,15 @@ Message.belongsTo(User, { as: 'user', foreignKey: 'userId' });
 User.belongsToMany(Message, { through: MessageLikes, foreignKey: 'userId', as: 'userMessages' });
 Message.belongsToMany(User, { through: MessageLikes, foreignKey: 'messageId', as: 'likedUsers' });
 
-export { User, Game, Stadion, UserGame, Facilitie, Guest, Group, Message, UserGroup, MessageLikes };
+export {
+  User,
+  Game,
+  Stadion,
+  UserGame,
+  Facilitie,
+  Group,
+  Message,
+  UserGroup,
+  MessageLikes,
+  Invitation,
+};

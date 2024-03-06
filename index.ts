@@ -32,22 +32,35 @@ app.use(express.static(path.resolve(__dirname, 'src', 'public')));
 app.use(fileUpload({}));
 
 app.set('trust proxy', true);
-app.get('/ip', (req: Request, res: Response, next: NextFunction) => {
+app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ipAddress = req.headers['x-forwarded-for'] as string;
     const { groupId, from } = req.query;
+
+    if (!groupId && !from) {
+      return res.send(ipAddress);
+    }
 
     if (!ipAddress || !from || !groupId) {
       return res.status(400).json({ success: false, message: 'Ip, from or id is empty' });
     }
 
-    Invitation.create({
-      ip: ipAddress,
-      groupId: +groupId,
-      from: from as string,
+    const invitation = await Invitation.findOne({
+      where: {
+        ip: ipAddress,
+        groupId: +groupId,
+      },
     });
 
-    res.send(ipAddress);
+    if (!invitation) {
+      Invitation.create({
+        ip: ipAddress,
+        groupId: +groupId,
+        from: from as string,
+      });
+    }
+
+    return res.send(ipAddress);
   } catch (error) {
     next(error);
   }

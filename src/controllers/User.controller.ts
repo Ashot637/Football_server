@@ -8,6 +8,7 @@ import * as uuid from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcrypt';
+import { Op } from 'sequelize';
 
 interface RegisterRequest {
   name: string;
@@ -127,14 +128,8 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
         role: ROLES.USER,
       });
 
-      let user = await User.findByPk(newUser.id, {
-        include: [
-          {
-            model: Invitation,
-            as: 'invitations',
-          },
-        ],
-      });
+      let user = await User.findByPk(newUser.id);
+
       if (!user) {
         return;
       }
@@ -160,6 +155,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
     const { id } = req.user;
     const { expoPushToken, ip } = req.query;
+    const { language } = req.headers;
 
     const [affectedCount] = await User.update(
       { expoPushToken: expoPushToken as string, ip: ip as string },
@@ -175,13 +171,43 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       expiresIn: '7d',
     });
 
-    const invitations = await Invitation.findAll({
+    let invitations = await Invitation.findAll({
       where: {
         ip: user.ip,
       },
     });
 
-    console.log(invitations);
+    const ids = invitations.map((x) => x.groupId);
+
+    const games = await Game.findAll({
+      where: {
+        groupId: ids,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [[`title_${language}`, `title`]],
+        },
+      ],
+    });
+
+    if (games?.length) {
+      invitations = invitations.map((invitation) => {
+        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
+          stadion: { title: string };
+          startTime: string;
+        };
+        return {
+          ...invitation.dataValues,
+          stadion: game.stadion.title,
+          startTime: game.startTime,
+        };
+      }) as unknown as (Invitation & { stadion: string; startTime: string })[];
+    }
 
     res.send({ ...user.dataValues, accessToken, invitations });
   } catch (error) {

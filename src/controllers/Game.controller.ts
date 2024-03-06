@@ -210,12 +210,12 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const { id, ip } = req.body;
+    const { id, groupId } = req.body;
 
     const invitation = await Invitation.findOne({
       where: {
         id,
-        ip,
+        groupId,
       },
     });
 

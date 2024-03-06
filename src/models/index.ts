@@ -30,8 +30,8 @@ Facilitie.belongsToMany(Stadion, {
 Game.hasMany(Invitation, { as: 'invitations', foreignKey: 'gameId' });
 Invitation.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
 
-User.hasMany(Invitation, { as: 'invitations', foreignKey: 'phone', sourceKey: 'phone' });
-Invitation.belongsTo(User, { as: 'user', foreignKey: 'phone', targetKey: 'phone' });
+// User.hasMany(Invitation, { as: 'invitations', foreignKey: 'ip', sourceKey: 'ip' });
+// Invitation.belongsTo(User, { as: 'user', foreignKey: 'ip', targetKey: 'ip' });
 
 // Messages
 

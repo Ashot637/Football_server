@@ -13,6 +13,7 @@ interface UserAttributes {
   img?: string;
   hasMessage?: boolean;
   role: ROLES;
+  ip: string;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
@@ -22,6 +23,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public name!: string;
   public phone!: string;
   public password!: string;
+  public ip!: string;
   public expoPushToken?: string;
   public email?: string;
   public address?: string;
@@ -36,6 +38,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
 User.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    ip: { type: DataTypes.STRING },
     name: { type: DataTypes.STRING, allowNull: false },
     phone: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },

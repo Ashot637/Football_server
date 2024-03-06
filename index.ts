@@ -3,9 +3,8 @@ dotenv.config();
 
 import { Server, type Socket } from 'socket.io';
 
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import http from 'http';
-import IP from 'ip';
 import sequelize from './src/db';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -21,6 +20,7 @@ import {
 } from './src/routes';
 
 import { groupsSocket, userSockets } from './src/sockets/userSockets';
+import { Invitation } from './src/models';
 
 const app = express();
 const server = http.createServer(app);
@@ -32,9 +32,25 @@ app.use(express.static(path.resolve(__dirname, 'src', 'public')));
 app.use(fileUpload({}));
 
 app.set('trust proxy', true);
-app.get('/ip', (req, res) => {
-  const ipAddress = req.headers['x-forwarded-for'];
-  res.send(ipAddress);
+app.get('/ip', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const ipAddress = req.headers['x-forwarded-for'] as string;
+    const { groupId, from } = req.query;
+
+    if (!ipAddress || !from || !groupId) {
+      return res.status(400).json({ success: false, message: 'Ip, from or id is empty' });
+    }
+
+    Invitation.create({
+      ip: ipAddress,
+      groupId: +groupId,
+      from: from as string,
+    });
+
+    res.send(ipAddress);
+  } catch (error) {
+    next(error);
+  }
 });
 app.use('/api/v2/', UserRouter);
 app.use('/api/v2/', StadionRouter);

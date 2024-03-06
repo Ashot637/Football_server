@@ -43,12 +43,6 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
 
     const user = await User.findOne({
       where: { phone },
-      include: [
-        {
-          model: Invitation,
-          as: 'invitations',
-        },
-      ],
     });
     if (!user) {
       return res.status(401).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
@@ -110,11 +104,12 @@ interface CodeRequest {
   name: string;
   password: string;
   expoPushToken: string;
+  ip: string;
 }
 
 const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: NextFunction) => {
   try {
-    const { phone, code, name, password, expoPushToken } = req.body;
+    const { phone, code, name, password, expoPushToken, ip } = req.body;
 
     if (!usersToVerify[phone]) {
       return res.status(400).json({ success: false });
@@ -124,6 +119,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
     if (1234 === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
       let newUser = await User.create({
+        ip,
         phone,
         name,
         expoPushToken,
@@ -163,16 +159,14 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
-    const { expoPushToken } = req.query;
+    const { expoPushToken, ip } = req.query;
 
-    const user = await User.findByPk(id, {
-      include: [
-        {
-          model: Invitation,
-          as: 'invitations',
-        },
-      ],
-    });
+    const [affectedCount] = await User.update(
+      { expoPushToken: expoPushToken as string, ip: ip as string },
+      { where: { id } },
+    );
+
+    const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -181,10 +175,15 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       expiresIn: '7d',
     });
 
-    user.expoPushToken = expoPushToken as string;
-    user.save();
+    const invitations = await Invitation.findAll({
+      where: {
+        ip: user.ip,
+      },
+    });
 
-    res.send({ ...user.dataValues, accessToken });
+    console.log(invitations);
+
+    res.send({ ...user.dataValues, accessToken, invitations });
   } catch (error) {
     next(error);
   }

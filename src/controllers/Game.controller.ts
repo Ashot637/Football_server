@@ -210,40 +210,45 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const { id, phone } = req.body;
+    const { id, ip } = req.body;
 
     const invitation = await Invitation.findOne({
       where: {
         id,
-        phone,
+        ip,
       },
     });
-
-    const game = await Game.findByPk(invitation?.gameId);
-
-    if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
-    }
-
-    game.increment('playersCount', { by: 1 });
 
     if (!invitation) {
       return res.status(404).json({ success: false, message: 'Invitation not found' });
     }
 
+    const games = await Game.findAll({
+      where: {
+        groupId: invitation?.groupId,
+      },
+    });
+
+    if (!games) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+
+    games.forEach((game) => {
+      game.increment('playersCount', { by: 1 });
+      UserGame.create({
+        userId,
+        gameId: 1,
+        uniforms: [],
+      });
+    });
+
     Invitation.destroy({
       where: { id },
     });
 
-    await UserGame.create({
-      userId,
-      gameId: invitation.gameId,
-      uniforms: [],
-    });
-
     const group = await Group.findOne({
       where: {
-        id: game.groupId,
+        id: invitation.groupId,
       },
     });
 
@@ -267,12 +272,12 @@ const declineInvitation = async (req: RequestWithUser, res: Response, next: Next
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    const { id, phone } = req.body;
+    const { id, ip } = req.body;
 
     const invitation = await Invitation.findOne({
       where: {
         id,
-        phone,
+        ip,
       },
     });
 
@@ -575,16 +580,6 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
         groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
         userId,
       },
-    });
-
-    guestsArray.forEach((guest: { phone: string }) => {
-      Invitation.create({
-        phone: guest.phone,
-        gameId: game.id,
-        from: userName,
-        startTime: game.startTime,
-        stadion: (game.dataValues as Game & { stadion: Stadion }).stadion.title_en,
-      });
     });
 
     res.send({ success: true, userGame });

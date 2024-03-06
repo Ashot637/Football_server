@@ -3,11 +3,9 @@ import sequelize from '../db';
 
 interface InvitationAttributes {
   id: number;
-  phone: string;
+  ip: string;
   from: string;
-  gameId: number;
-  startTime: Date;
-  stadion: string;
+  groupId: number;
 }
 
 interface InvitationCreationAttributes extends Optional<InvitationAttributes, 'id'> {}
@@ -17,11 +15,9 @@ class Invitation
   implements InvitationAttributes
 {
   public id!: number;
-  public phone!: string;
+  public ip!: string;
   public from!: string;
-  public gameId!: number;
-  public startTime!: Date;
-  public stadion!: string;
+  public groupId!: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -30,11 +26,9 @@ class Invitation
 Invitation.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    phone: { type: DataTypes.STRING, allowNull: false },
+    ip: { type: DataTypes.STRING, allowNull: false },
     from: { type: DataTypes.STRING, allowNull: false },
-    gameId: { type: DataTypes.INTEGER, allowNull: false },
-    startTime: { type: DataTypes.DATE, allowNull: false },
-    stadion: { type: DataTypes.STRING, allowNull: false },
+    groupId: { type: DataTypes.INTEGER, allowNull: false },
   },
   {
     sequelize,

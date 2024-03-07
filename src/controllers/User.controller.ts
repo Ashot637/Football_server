@@ -154,8 +154,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
-    const { expoPushToken, ip } = req.query;
-    const { language } = req.headers;
+    const { expoPushToken, ip, language } = req.query;
 
     const [affectedCount] = await User.update(
       { expoPushToken: expoPushToken as string, ip: ip as string },
@@ -194,6 +193,10 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
         },
       ],
     });
+
+    console.log('====================================');
+    console.log(ids);
+    console.log('====================================');
 
     if (games?.length) {
       invitations = invitations.map((invitation) => {

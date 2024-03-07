@@ -237,7 +237,7 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       game.increment('playersCount', { by: 1 });
       UserGame.create({
         userId,
-        gameId: 1,
+        gameId: game.id,
         uniforms: [],
       });
     });
@@ -272,18 +272,17 @@ const declineInvitation = async (req: RequestWithUser, res: Response, next: Next
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    const { id, ip } = req.body;
+    const { id } = req.body;
 
-    const invitation = await Invitation.findOne({
-      where: {
-        id,
-        ip,
-      },
-    });
+    // const invitation = await Invitation.findOne({
+    //   where: {
+    //     id,
+    //   },
+    // });
 
-    if (!invitation) {
-      return res.status(404).json({ success: false, message: 'Invitation not found' });
-    }
+    // if (!invitation) {
+    //   return res.status(404).json({ success: false, message: 'Invitation not found' });
+    // }
 
     Invitation.destroy({
       where: { id },

@@ -233,14 +233,18 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       return res.status(404).json({ success: false, message: 'Game not found' });
     }
 
-    games.forEach((game) => {
-      game.increment('playersCount', { by: 1 });
-      UserGame.create({
-        userId,
-        gameId: game.id,
-        uniforms: [],
+    for (const game of games) {
+      const [newUserGame, isCreated] = await UserGame.findOrCreate({
+        where: {
+          userId,
+          gameId: game.id,
+        },
       });
-    });
+      if (isCreated) {
+        console.log('New Game');
+        game.increment('playersCount', { by: 1 });
+      }
+    }
 
     Invitation.destroy({
       where: { id },

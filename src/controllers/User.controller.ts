@@ -168,12 +168,12 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
       if (games?.length) {
         invitations = invitations.map((invitation) => {
           const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-            dataValues: { stadion: { title: string } };
+            dataValues: { stadion: { dataValues: { title: string } } };
             startTime: string;
           };
           return {
             ...invitation.dataValues,
-            stadion: game.dataValues.stadion.title,
+            stadion: game.dataValues.stadion.dataValues.title,
             startTime: game.startTime,
           };
         }) as unknown as (Invitation & { stadion: string; startTime: string })[];
@@ -240,12 +240,12 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     if (games?.length) {
       invitations = invitations.map((invitation) => {
         const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-          dataValues: { stadion: { title: string } };
+          dataValues: { stadion: { dataValues: { title: string } } };
           startTime: string;
         };
         return {
           ...invitation.dataValues,
-          stadion: game.dataValues.stadion.title,
+          stadion: game.dataValues.stadion.dataValues.title,
           startTime: game.startTime,
         };
       }) as unknown as (Invitation & { stadion: string; startTime: string })[];

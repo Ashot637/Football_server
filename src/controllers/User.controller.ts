@@ -111,6 +111,9 @@ interface CodeRequest {
 const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: NextFunction) => {
   try {
     const { phone, code, name, password, expoPushToken, ip } = req.body;
+    let { language } = req.query;
+
+    language = language || 'am';
 
     if (!usersToVerify[phone]) {
       return res.status(400).json({ success: false });
@@ -119,7 +122,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
     // if (usersToVerify[phone] === +code) {
     if (1234 === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
-      let newUser = await User.create({
+      const user = await User.create({
         ip,
         phone,
         name,
@@ -127,8 +130,6 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
         password: passwordHash,
         role: ROLES.USER,
       });
-
-      let user = await User.findByPk(newUser.id);
 
       if (!user) {
         return;
@@ -140,7 +141,49 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
 
       delete usersToVerify[phone];
 
-      return res.send({ ...user.dataValues, accessToken });
+      let invitations = await Invitation.findAll({
+        where: {
+          ip,
+        },
+      });
+
+      const ids = invitations.map((x) => x.groupId);
+
+      const games = await Game.findAll({
+        where: {
+          groupId: ids,
+          startTime: {
+            [Op.gt]: new Date(),
+          },
+        },
+        include: [
+          {
+            model: Stadion,
+            as: 'stadion',
+            attributes: [[`title_${language}`, `title`]],
+          },
+        ],
+      });
+
+      if (games?.length) {
+        invitations = invitations.map((invitation) => {
+          const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
+            dataValues: { stadion: { title: string } };
+            startTime: string;
+          };
+          return {
+            ...invitation.dataValues,
+            stadion: game.dataValues.stadion.title,
+            startTime: game.startTime,
+          };
+        }) as unknown as (Invitation & { stadion: string; startTime: string })[];
+      }
+
+      if (!games?.length) {
+        invitations = [];
+      }
+
+      return res.send({ ...user.dataValues, accessToken, invitations });
     }
     return res.status(401).json({ success: false, message: 'INVALID_CODE' });
   } catch (error) {
@@ -194,19 +237,15 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       ],
     });
 
-    console.log('====================================');
-    console.log(ids);
-    console.log('====================================');
-
     if (games?.length) {
       invitations = invitations.map((invitation) => {
         const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-          stadion: { title: string };
+          dataValues: { stadion: { title: string } };
           startTime: string;
         };
         return {
           ...invitation.dataValues,
-          stadion: game.stadion.title,
+          stadion: game.dataValues.stadion.title,
           startTime: game.startTime,
         };
       }) as unknown as (Invitation & { stadion: string; startTime: string })[];

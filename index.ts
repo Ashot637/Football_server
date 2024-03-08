@@ -35,32 +35,32 @@ app.set('trust proxy', true);
 app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ipAddress = req.headers['x-forwarded-for'] as string;
-    const { groupId, from } = req.query;
+    const { abc, from } = req.query;
 
-    if (!groupId && !from) {
+    if (!abc && !from) {
       return res.send(ipAddress);
     }
 
-    if (!ipAddress || !from || !groupId) {
+    if (!ipAddress || !from || !abc) {
       return res.status(400).json({ success: false, message: 'Ip, from or id is empty' });
     }
 
     const invitation = await Invitation.findOne({
       where: {
         ip: ipAddress,
-        groupId: +groupId,
+        groupId: +abc,
       },
     });
 
     if (!invitation) {
       Invitation.create({
         ip: ipAddress,
-        groupId: +groupId,
+        groupId: +abc,
         from: from as string,
       });
     }
 
-    return res.send(ipAddress);
+    return res.redirect('https://ballhola.page.link/DtUc');
   } catch (error) {
     next(error);
   }

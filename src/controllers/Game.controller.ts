@@ -234,14 +234,19 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
     }
 
     for (const game of games) {
-      const [newUserGame, isCreated] = await UserGame.findOrCreate({
+      const userGame = await UserGame.findOne({
         where: {
           userId,
           gameId: game.id,
         },
       });
-      if (isCreated) {
-        console.log('New Game');
+
+      if (!userGame) {
+        UserGame.create({
+          userId,
+          gameId: game.id,
+          uniforms: [],
+        });
         game.increment('playersCount', { by: 1 });
       }
     }

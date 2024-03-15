@@ -67,6 +67,47 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
   }
 };
 
+const checkPhone = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, expoPushToken } = req.body;
+
+    const user = await User.findOne({
+      where: { phone },
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'INVALID_PHONE' });
+    }
+
+    user.expoPushToken = expoPushToken;
+    user.save();
+
+    const code = generateCode();
+
+    usersToVerify[phone] = code;
+    console.log('====================================');
+    console.log(usersToVerify);
+    console.log('====================================');
+
+    return res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const checkCode = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, code } = req.body;
+
+    if (code === '1234') {
+      return res.send({ success: true });
+    }
+    return res.status(401).json({ success: false, message: 'INVALID_CODE' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const generateUserCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone } = req.body;
@@ -74,9 +115,6 @@ const generateUserCode = async (req: Request, res: Response, next: NextFunction)
 
     usersToVerify[phone] = code;
 
-    console.log('====================================');
-    console.log(usersToVerify);
-    console.log('====================================');
     return res.json({ success: true });
   } catch (error) {
     next(error);
@@ -94,6 +132,35 @@ const regenerateUserCode = async (req: Request, res: Response, next: NextFunctio
     console.log(usersToVerify);
     console.log('====================================');
     return res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, code, password } = req.body;
+
+    if (1234 !== +code) {
+      return res.status(400).json({ success: false, message: 'INVALID_CODE' });
+    }
+
+    const user = await User.findOne({ where: { phone } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    user.password = passwordHash;
+    await user.save();
+
+    delete usersToVerify[phone];
+
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
+      expiresIn: '7d',
+    });
+
+    return res.send({ ...user.dataValues, accessToken });
   } catch (error) {
     next(error);
   }
@@ -185,7 +252,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
 
       return res.send({ ...user.dataValues, accessToken, invitations });
     }
-    return res.status(401).json({ success: false, message: 'INVALID_CODE' });
+    return res.status(400).json({ success: false, message: 'INVALID_CODE' });
   } catch (error) {
     next(error);
   }
@@ -438,5 +505,8 @@ export default {
   regenerateUserCode,
   logout,
   remove,
+  checkPhone,
+  checkCode,
+  changePassword,
   // updateStatus,
 };

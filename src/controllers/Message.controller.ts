@@ -149,7 +149,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const { text, groupId, id, userName, groupTitle } = req.body;
+    const { text, groupId, id, userName, groupTitle, expoPushToken } = req.body;
 
     const userGroups = await UserGroup.findAll({
       where: {
@@ -194,8 +194,8 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     });
 
     const usersToSend = users.reduce((acc: string[], user: User) => {
-      if (user.expoPushToken) acc.push(user.expoPushToken);
-      return acc;
+      if (user.expoPushToken === expoPushToken || !user.expoPushToken) return acc;
+      acc.push(user.expoPushToken);
     }, [] as string[]);
 
     const courier = new CourierClient({
@@ -233,7 +233,11 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
 
     const messageData = {
       ...message.dataValues,
-      user: { name: associatedUser.dataValues.name, img: associatedUser.dataValues.img },
+      user: {
+        name: associatedUser.dataValues.name,
+        img: associatedUser.dataValues.img,
+        id: associatedUser.dataValues.id,
+      },
     };
 
     userSocket.broadcast.to(groupId).emit('new-message', messageData);

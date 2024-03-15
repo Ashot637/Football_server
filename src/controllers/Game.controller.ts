@@ -97,6 +97,11 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         groupId: group.id,
         creatorId: userId,
       });
+      UserGame.create({
+        userId,
+        gameId: +game.id,
+        uniforms: [],
+      });
     } else if (range === 4) {
       games = await Game.bulkCreate([
         {
@@ -140,6 +145,13 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           creatorId: userId,
         },
       ]);
+      games.forEach((game) => {
+        UserGame.create({
+          userId,
+          gameId: +game.id,
+          uniforms: [],
+        });
+      });
     } else {
       return res.json(400).send({ success: false, message: 'Missing range' });
     }
@@ -148,16 +160,10 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
       attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'title_en'],
     });
 
-    // await UserGame.create({
-    //   userId,
-    //   gameId: +game.id,
-    //   uniforms: uniforms || [],
-    // });
-
-    // await UserGroup.create({
-    //   groupId: group.id,
-    //   userId,
-    // });
+    await UserGroup.create({
+      groupId: group.id,
+      userId,
+    });
     if (game) {
       return res.send({ game: { ...game.toJSON(), stadion }, success: true });
     } else if (games) {
@@ -199,6 +205,96 @@ const extendGame = async (req: RequestWithUser, res: Response, next: NextFunctio
     });
 
     return res.send(newGame);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllGroupGames = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { language } = req.query;
+
+    const userGames = await UserGame.findAll({
+      where: {
+        userId,
+      },
+    });
+
+    if (!userGames) {
+      return res.status(404).json({ success: false, message: 'Games not found' });
+    }
+
+    if (!userGames.length) {
+      return res.json([]);
+    }
+
+    const gameIds = userGames.map((userGame) => userGame.gameId);
+
+    const games = await Game.findAll({
+      where: {
+        id: gameIds,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: User,
+          as: 'users',
+          where: {
+            id: userId,
+          },
+        },
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'img'],
+        },
+      ],
+      order: [['startTime', 'ASC']],
+    });
+
+    return res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changeWillPlayGameStatus = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id, status, prevStatus } = req.body;
+
+    if (status) {
+      Game.increment('playersCount', { by: 1, where: { id } });
+    } else if (status === null && prevStatus) {
+      Game.decrement('playersCount', { by: 1, where: { id } });
+    }
+
+    UserGame.update(
+      {
+        willPlay: status,
+      },
+      {
+        where: {
+          gameId: id,
+          userId,
+        },
+      },
+    );
+
+    return res.send({ success: true });
   } catch (error) {
     next(error);
   }
@@ -449,6 +545,7 @@ const getOne = async (
             attributes: [
               [`title_${language}`, `title`],
               [`address_${language}`, `address`],
+              'title_en',
               'id',
               'img',
             ],
@@ -476,17 +573,54 @@ const getOne = async (
       return res.status(404).json({ success: false, message: 'Game not found' });
     }
 
-    const userGames = await UserGame.findAll({ where: { gameId: id } });
+    if (game.isPublic) {
+      const userGames = await UserGame.findAll({ where: { gameId: id } });
 
-    let uniforms = [0, 0, 0, 0];
+      let uniforms = [0, 0, 0, 0];
 
-    userGames.forEach((userGame) => {
-      userGame.uniforms.forEach((index) => {
-        uniforms[index] = ++uniforms[index];
+      userGames.forEach((userGame) => {
+        userGame.uniforms.forEach((index) => {
+          uniforms[index] = ++uniforms[index];
+        });
       });
+
+      return res.send({ ...game.toJSON(), uniforms });
+    }
+    const group = await Group.findByPk(game.groupId, {
+      include: {
+        model: User,
+        include: [
+          {
+            model: Game,
+            as: 'games',
+            where: {
+              id: game.id,
+            },
+          },
+        ],
+      },
     });
 
-    res.send({ ...game.toJSON(), uniforms });
+    type AccType = { usersWillPlayCount: number; usersWontPlayCount: number };
+    const usersStatistics: AccType =
+      //@ts-ignore
+      group.Users.reduce(
+        (acc: AccType, user: User) => {
+          //@ts-ignore
+          if (user.games[0].UserGame.willPlay) {
+            acc.usersWillPlayCount++;
+            //@ts-ignore
+          } else if (user.games[0].UserGame.willPlay === false) acc.usersWontPlayCount++;
+          return acc;
+        },
+        { usersWillPlayCount: 0, usersWontPlayCount: 0 },
+      );
+
+    return res.send({
+      ...game.toJSON(),
+      users: (group?.toJSON() as Group & { Users: User[] }).Users,
+      ...usersStatistics,
+    });
   } catch (error) {
     next(error);
   }
@@ -508,7 +642,7 @@ const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: 
       },
     });
 
-    res.send({ success: true });
+    return res.send({ success: true });
   } catch (error) {
     next(error);
   }
@@ -556,7 +690,7 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
     }
     const { id: userId } = req.user;
     const { gameId } = req.params;
-    const { uniforms, guests, userName } = req.body;
+    const { uniforms } = req.body;
 
     const game = await Game.findByPk(gameId, {
       include: [
@@ -578,19 +712,25 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
     const userGame = await UserGame.create({
       userId,
       gameId: +gameId,
+      willPlay: true,
       uniforms: uniforms || [],
     });
 
-    let guestsArray = guests ? JSON.parse(guests) : [];
-
-    UserGroup.findOrCreate({
+    const userGroup = await UserGroup.findOne({
       where: {
         groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
         userId,
       },
     });
 
-    res.send({ success: true, userGame });
+    if (!userGroup) {
+      UserGroup.create({
+        groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
+        userId,
+      });
+    }
+
+    return res.send({ success: true, userGame });
   } catch (error) {
     next(error);
   }
@@ -607,6 +747,7 @@ const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextF
     const userGames = await UserGame.findAll({
       where: {
         userId,
+        willPlay: true,
       },
     });
 
@@ -661,6 +802,7 @@ const getActivity = async (req: RequestWithUser, res: Response, next: NextFuncti
     const userGames = await UserGame.findAll({
       where: {
         userId,
+        willPlay: true,
       },
     });
 
@@ -801,6 +943,8 @@ export default {
   register,
   getUpcomingGames,
   getActivity,
+  getAllGroupGames,
   cancel,
   getAllCreated,
+  changeWillPlayGameStatus,
 };

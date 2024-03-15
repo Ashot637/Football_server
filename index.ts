@@ -9,6 +9,7 @@ import sequelize from './src/db';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import path from 'path';
+import jwt, { type GetPublicKeyOrSecret, type Secret } from 'jsonwebtoken';
 import fileUpload from 'express-fileupload';
 import errorHandler from './src/middlewares/errorHandler';
 import {
@@ -35,28 +36,33 @@ app.set('trust proxy', true);
 app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ipAddress = req.headers['x-forwarded-for'] as string;
-    const { abc, from } = req.query;
+    const { token } = req.query;
 
-    if (!abc && !from) {
+    const decoded: any = jwt.verify(
+      token as string,
+      process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret,
+    );
+
+    if (!token) {
       return res.send(ipAddress);
     }
 
-    if (!ipAddress || !from || !abc) {
+    if (!ipAddress || !decoded) {
       return res.status(400).json({ success: false, message: 'Ip, from or id is empty' });
     }
 
     const invitation = await Invitation.findOne({
       where: {
         ip: ipAddress,
-        groupId: +abc,
+        groupId: decoded.groupId,
       },
     });
 
     if (!invitation) {
       Invitation.create({
         ip: ipAddress,
-        groupId: +abc,
-        from: from as string,
+        groupId: decoded.groupId,
+        from: decoded.from,
       });
     }
 

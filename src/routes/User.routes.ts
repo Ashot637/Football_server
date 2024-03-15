@@ -10,6 +10,9 @@ router.post('/auth/login', UserController.login);
 router.post('/auth/generateCode', UserController.generateUserCode);
 router.post('/auth/resend', UserController.regenerateUserCode);
 router.post('/auth/verifyCode', UserController.code);
+router.post('/auth/checkPhone', UserController.checkPhone);
+router.post('/auth/checkCode', UserController.checkCode);
+router.post('/auth/changePassword', UserController.changePassword);
 router.post('/auth/logout', checkRole(ROLES.USER), UserController.logout);
 
 router.delete('/user/remove', checkRole(ROLES.USER), UserController.remove);

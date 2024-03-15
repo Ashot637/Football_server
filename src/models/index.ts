@@ -39,7 +39,7 @@ Group.hasMany(Game, { as: 'game', foreignKey: 'groupId' });
 Game.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });
 
 Group.belongsToMany(User, { through: UserGroup, foreignKey: 'groupId' });
-User.belongsToMany(Group, { through: UserGroup, foreignKey: 'gameId' });
+User.belongsToMany(Group, { through: UserGroup, foreignKey: 'userId' });
 
 Group.hasMany(Message, { as: 'messages', foreignKey: 'groupId' });
 Message.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });

@@ -13,9 +13,15 @@ router.get('/game/getActivity', checkRole(ROLES.USER), GameController.getActivit
 router.post('/game/cancel/:gameId', checkRole(ROLES.USER), GameController.cancel);
 router.post('/game/register/:gameId', checkRole(ROLES.USER), GameController.register);
 router.get('/game/getAllCreated', checkRole(ROLES.USER), GameController.getAllCreated);
+router.get('/game/getAllGroupGames', checkRole(ROLES.USER), GameController.getAllGroupGames);
 
 router.post('/game/organizerCreate', checkRole(ROLES.USER), GameController.organizerCreate);
 router.post('/game/extendGame', checkRole(ROLES.USER), GameController.extendGame);
+router.patch(
+  '/game/changeWillPlayGameStatus',
+  checkRole(ROLES.USER),
+  GameController.changeWillPlayGameStatus,
+);
 router.post('/game/acceptInvitation', checkRole(ROLES.USER), GameController.acceptInvitation);
 router.post('/game/declineInvitation', checkRole(ROLES.USER), GameController.declineInvitation);
 

@@ -196,6 +196,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     const usersToSend = users.reduce((acc: string[], user: User) => {
       if (user.expoPushToken === expoPushToken || !user.expoPushToken) return acc;
       acc.push(user.expoPushToken);
+      return acc;
     }, [] as string[]);
 
     const courier = new CourierClient({

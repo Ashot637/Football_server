@@ -38,14 +38,14 @@ app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
     const ipAddress = req.headers['x-forwarded-for'] as string;
     const { token } = req.query;
 
+    if (!token) {
+      return res.send(ipAddress);
+    }
+
     const decoded: any = jwt.verify(
       token as string,
       process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret,
     );
-
-    if (!token) {
-      return res.send(ipAddress);
-    }
 
     if (!ipAddress || !decoded) {
       return res.status(400).json({ success: false, message: 'Ip, from or id is empty' });

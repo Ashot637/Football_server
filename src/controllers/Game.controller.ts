@@ -343,7 +343,6 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
           gameId: game.id,
           uniforms: [],
         });
-        game.increment('playersCount', { by: 1 });
       }
     }
 

@@ -263,10 +263,22 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    const { id } = req.user;
+    const { id, role } = req.user;
+    if (role === ROLES.ADMIN) {
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
+        expiresIn: '7d',
+      });
+
+      return res.send({ ...user.dataValues, accessToken });
+    }
     const { expoPushToken, ip, language } = req.query;
 
-    const [affectedCount] = await User.update(
+    await User.update(
       { expoPushToken: expoPushToken as string, ip: ip as string },
       { where: { id } },
     );

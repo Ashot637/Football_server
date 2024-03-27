@@ -65,7 +65,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
         },
       ]);
     } else {
-      return res.json(400).send({ success: false, message: 'Missing range' });
+      return res.status(400).send({ success: false, message: 'Missing range' });
     }
 
     return res.send(data);

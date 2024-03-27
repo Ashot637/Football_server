@@ -79,7 +79,9 @@ app.use('/api/v2/', MessageRouter);
 
 app.use(errorHandler);
 
-const io = new Server(server);
+const io = new Server({
+  path: 'htpp://146.190.151.55/service',
+});
 
 (global as typeof globalThis & { io: Server }).io = io;
 

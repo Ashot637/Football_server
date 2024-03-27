@@ -79,7 +79,9 @@ app.use('/api/v2/', MessageRouter);
 
 app.use(errorHandler);
 
-const io = new Server(server);
+const io = new Server({
+  path: '/socket',
+});
 
 (global as typeof globalThis & { io: Server }).io = io;
 

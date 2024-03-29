@@ -260,7 +260,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id, role } = req.user;
-    if (role === ROLES.ADMIN) {
+    if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
       const user = await User.findByPk(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });

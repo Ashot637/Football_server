@@ -5,7 +5,7 @@ import seedStadions from './stadion.seed';
 
 const seedAll = async () => {
   seedFacilities();
-  // seedUsers();
+  seedUsers();
   setTimeout(() => {
     seedStadions();
   }, 2000);

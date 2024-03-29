@@ -22,6 +22,6 @@ router.patch('/user/update', checkRole(ROLES.USER), UserController.update);
 router.get('/user/getAll', checkRole(ROLES.ADMIN), UserController.getAll);
 router.get('/user/getOne/:id', checkRole(ROLES.ADMIN), UserController.getOne);
 
-router.get('/auth', checkRole(ROLES.USER, ROLES.ADMIN), UserController.authMe);
+router.get('/auth', checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER), UserController.authMe);
 
 export default router;

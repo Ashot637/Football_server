@@ -1,9 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Facilitie, Stadion } from '../models';
+import { Facilitie, Stadion, User } from '../models';
 import { Op } from 'sequelize';
 import path from 'path';
 import * as uuid from 'uuid';
 import StadionFacilitie from '../models/StadionFacilitie.model';
+import { ROLES } from '../types/Roles';
+import bcrypt from 'bcrypt';
 
 interface CreateRequest {
   title_en: string;
@@ -13,27 +15,77 @@ interface CreateRequest {
   address_ru: string;
   address_am: string;
   facilitiesIds: unknown;
+  name: string;
+  phone: string;
+  password: string;
 }
 
 const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
   try {
-    let { title_en, title_ru, title_am, address_en, address_ru, address_am, facilitiesIds } =
-      req.body;
-    const { img } = (req as any).files;
-
-    const type = img.mimetype.split('/')[1];
-    const fileName = uuid.v4() + '.' + type;
-    img.mv(path.resolve(__dirname, '..', 'static', fileName));
-
-    const stadion = await Stadion.create({
+    let {
       title_en,
       title_ru,
       title_am,
       address_en,
       address_ru,
       address_am,
-      img: fileName,
+      facilitiesIds,
+      phone,
+      password,
+      name,
+    } = req.body;
+    const { img } = (req as any).files;
+
+    const type = img.mimetype.split('/')[1];
+    const fileName = uuid.v4() + '.' + type;
+    img.mv(path.resolve(__dirname, '..', 'static', fileName));
+
+    // const user = User.findOrCreate({
+    //   where:{ phone},
+    //   defaults: {
+    //     name: 'Stadion',
+
+    //   }
+    // })
+
+    const user = await User.findOne({
+      where: {
+        phone,
+      },
     });
+
+    let stadion: Stadion;
+    if (user) {
+      stadion = await Stadion.create({
+        title_en,
+        title_ru,
+        title_am,
+        address_en,
+        address_ru,
+        address_am,
+        img: fileName,
+        ownerId: user.id,
+      });
+    } else {
+      const passwordHash = await bcrypt.hash(password, 10);
+      const stadionOwner = await User.create({
+        ip: '',
+        phone,
+        name,
+        password: passwordHash,
+        role: ROLES.STADION_OWNER,
+      });
+      stadion = await Stadion.create({
+        title_en,
+        title_ru,
+        title_am,
+        address_en,
+        address_ru,
+        address_am,
+        img: fileName,
+        ownerId: stadionOwner.id,
+      });
+    }
 
     facilitiesIds = JSON.parse(facilitiesIds as string);
 
@@ -44,7 +96,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
       });
     });
 
-    res.send(stadion);
+    return res.send(stadion);
   } catch (error) {
     next(error);
   }
@@ -52,9 +104,22 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
 
 const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const stadions = await Stadion.findAll();
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id, role } = req.user;
+    let stadions: Stadion[];
+    if (role === 'ADMIN') {
+      stadions = await Stadion.findAll();
+      return res.send(stadions);
+    }
+    stadions = await Stadion.findAll({
+      where: {
+        ownerId: id,
+      },
+    });
 
-    res.send(stadions);
+    return res.send(stadions);
   } catch (error) {
     next(error);
   }

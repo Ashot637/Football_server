@@ -3,6 +3,7 @@ import sequelize from '../db';
 
 interface StadionAttributes {
   id: number;
+  ownerId: number;
   title_en: string;
   title_ru: string;
   title_am: string;
@@ -19,6 +20,7 @@ class Stadion
   implements StadionAttributes
 {
   public id!: number;
+  public ownerId!: number;
   public title_en!: string;
   public title_ru!: string;
   public title_am!: string;
@@ -34,6 +36,7 @@ class Stadion
 Stadion.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    ownerId: { type: DataTypes.INTEGER },
     title_en: { type: DataTypes.STRING },
     title_ru: { type: DataTypes.STRING },
     title_am: { type: DataTypes.STRING },

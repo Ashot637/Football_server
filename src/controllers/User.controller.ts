@@ -198,10 +198,6 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
         role: ROLES.USER,
       });
 
-      if (!user) {
-        return;
-      }
-
       const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
         expiresIn: '7d',
       });

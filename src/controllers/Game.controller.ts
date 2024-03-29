@@ -3,6 +3,7 @@ import { Facilitie, Game, Stadion, User, UserGame, Group, UserGroup, Invitation 
 import { type RequestWithUser } from '../types/RequestWithUser';
 import { Op, type WhereOptions } from 'sequelize';
 import dayjs from 'dayjs';
+import { ROLES } from '../types/Roles';
 
 interface CreateRequest {
   price: number;
@@ -478,7 +479,7 @@ const getAll = async (
       });
     }
 
-    res.send(games);
+    return res.send(games);
   } catch (error) {
     next(error);
   }
@@ -524,6 +525,35 @@ const getByStadionId = async (req: Request, res: Response, next: NextFunction) =
 interface GetOneRequest {
   language?: 'en' | 'ru' | 'am';
 }
+
+const getAllFromAdminPanel = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id, role } = req.user;
+    let games: Game[];
+    if (role === ROLES.ADMIN) {
+      games = await Game.findAll({
+        include: [{ model: Stadion, as: 'stadion' }],
+        order: [
+          ['startTime', 'DESC'],
+          ['playersCount', 'DESC'],
+        ],
+      });
+    } else {
+      const stadionsIds = (await Stadion.findAll({ where: { ownerId: id } })).map((x) => x.id);
+      games = await Game.findAll({
+        where: {
+          stadionId: stadionsIds,
+        },
+      });
+    }
+    return res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getOne = async (
   req: Request<{ id: string }, {}, {}, GetOneRequest>,
@@ -944,6 +974,7 @@ export default {
   getActivity,
   getAllGroupGames,
   cancel,
+  getAllFromAdminPanel,
   getAllCreated,
   changeWillPlayGameStatus,
 };

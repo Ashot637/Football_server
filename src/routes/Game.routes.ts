@@ -26,6 +26,11 @@ router.post('/game/acceptInvitation', checkRole(ROLES.USER), GameController.acce
 router.post('/game/declineInvitation', checkRole(ROLES.USER), GameController.declineInvitation);
 
 // router.post('/game/create', checkRole(ROLES.ADMIN), GameController.create);
+router.post(
+  '/game/getAllFromAdminPanel',
+  checkRole(ROLES.ADMIN, ROLES.STADION_OWNER),
+  GameController.getAllFromAdminPanel,
+);
 router.post('/game/create', GameController.create);
 router.delete('/game/delete', checkRole(ROLES.ADMIN), GameController.remove);
 router.patch('/game/update/:id', checkRole(ROLES.ADMIN), GameController.update);

@@ -526,7 +526,7 @@ interface GetOneRequest {
   language?: 'en' | 'ru' | 'am';
 }
 
-const getAllFromAdminPanel = async (req: Request, res: Response, next: NextFunction) => {
+const getAllFromAdminPanel = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });

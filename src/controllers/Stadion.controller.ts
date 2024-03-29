@@ -6,6 +6,7 @@ import * as uuid from 'uuid';
 import StadionFacilitie from '../models/StadionFacilitie.model';
 import { ROLES } from '../types/Roles';
 import bcrypt from 'bcrypt';
+import { RequestWithUser } from '../types/RequestWithUser';
 
 interface CreateRequest {
   title_en: string;
@@ -102,7 +103,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
   }
 };
 
-const getAll = async (req: Request, res: Response, next: NextFunction) => {
+const getAll = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });

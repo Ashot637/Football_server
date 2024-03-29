@@ -547,6 +547,7 @@ const getAllFromAdminPanel = async (req: RequestWithUser, res: Response, next: N
         where: {
           stadionId: stadionsIds,
         },
+        include: [{ model: Stadion, as: 'stadion' }],
       });
     }
     return res.send(games);

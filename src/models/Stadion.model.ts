@@ -36,7 +36,7 @@ class Stadion
 Stadion.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    ownerId: { type: DataTypes.INTEGER },
+    ownerId: { type: DataTypes.INTEGER, defaultValue: -1 },
     title_en: { type: DataTypes.STRING },
     title_ru: { type: DataTypes.STRING },
     title_am: { type: DataTypes.STRING },

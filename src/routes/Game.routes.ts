@@ -26,7 +26,7 @@ router.post('/game/acceptInvitation', checkRole(ROLES.USER), GameController.acce
 router.post('/game/declineInvitation', checkRole(ROLES.USER), GameController.declineInvitation);
 
 // router.post('/game/create', checkRole(ROLES.ADMIN), GameController.create);
-router.post(
+router.get(
   '/game/getAllFromAdminPanel',
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER),
   GameController.getAllFromAdminPanel,

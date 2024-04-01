@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Facilitie, Stadion, User } from '../models';
+import { Facilitie, Game, Stadion, User } from '../models';
 import { Op } from 'sequelize';
 import path from 'path';
 import * as uuid from 'uuid';
@@ -7,6 +7,7 @@ import StadionFacilitie from '../models/StadionFacilitie.model';
 import { ROLES } from '../types/Roles';
 import bcrypt from 'bcrypt';
 import { RequestWithUser } from '../types/RequestWithUser';
+import StadionNotification from '../models/StadionNotification.model';
 
 interface CreateRequest {
   title_en: string;
@@ -258,6 +259,34 @@ const update = async (
   }
 };
 
+const getAllNotifications = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id } = req.user;
+    const stadions = await Stadion.findAll({
+      where: {
+        ownerId: id,
+      },
+    });
+    const ids = stadions.map((stadion) => stadion.id);
+    const notifications = await StadionNotification.findAll({
+      where: {
+        stadionId: ids,
+      },
+      include: [
+        { model: User, as: 'user' },
+        { model: Stadion, as: 'stadion' },
+        { model: Game, as: 'game' },
+      ],
+    });
+    return res.send(notifications);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   create,
   getAll,
@@ -266,4 +295,5 @@ export default {
   update,
   search,
   getAllForUser,
+  getAllNotifications,
 };

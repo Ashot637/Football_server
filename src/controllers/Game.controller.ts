@@ -4,6 +4,7 @@ import { type RequestWithUser } from '../types/RequestWithUser';
 import { Op, type WhereOptions } from 'sequelize';
 import dayjs from 'dayjs';
 import { ROLES } from '../types/Roles';
+import StadionNotification from '../models/StadionNotification.model';
 
 interface CreateRequest {
   price: number;
@@ -165,9 +166,22 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
       groupId: group.id,
       userId,
     });
+
     if (game) {
+      StadionNotification.create({
+        userId,
+        gameId: game.id,
+        stadionId,
+      });
       return res.send({ game: { ...game.toJSON(), stadion }, success: true });
     } else if (games) {
+      games.forEach((game) => {
+        StadionNotification.create({
+          userId,
+          gameId: game.id,
+          stadionId,
+        });
+      });
       return res.send({ game: { ...games.at(0)?.toJSON(), stadion }, success: true });
     }
   } catch (error) {

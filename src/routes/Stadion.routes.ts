@@ -14,6 +14,11 @@ router.get(
   StadionController.getAll,
 );
 router.post('/stadion/create', checkRole(ROLES.ADMIN), StadionController.create);
+router.get(
+  '/stadion/getAllNotifications',
+  checkRole(ROLES.STADION_OWNER),
+  StadionController.getAllNotifications,
+);
 router.delete('/stadion/delete', checkRole(ROLES.ADMIN), StadionController.remove);
 router.patch('/stadion/update/:id', checkRole(ROLES.ADMIN), StadionController.update);
 

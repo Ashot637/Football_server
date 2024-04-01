@@ -9,6 +9,7 @@ import Message from './Message.model';
 import UserGroup from './UserGroup.model';
 import MessageLikes from './MessageLikes.model';
 import Invitation from './Invitation.model';
+import StadionNotification from './StadionNotification.model';
 
 Stadion.hasMany(Game, { foreignKey: 'stadionId' });
 Game.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
@@ -29,6 +30,15 @@ Facilitie.belongsToMany(Stadion, {
 
 Game.hasMany(Invitation, { as: 'invitations', foreignKey: 'gameId' });
 Invitation.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
+
+Game.hasMany(StadionNotification, { foreignKey: 'gameId' });
+StadionNotification.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
+
+User.hasMany(StadionNotification, { foreignKey: 'userId' });
+StadionNotification.belongsTo(User, { as: 'user', foreignKey: 'userId' });
+
+Stadion.hasMany(StadionNotification, { foreignKey: 'stadionId' });
+StadionNotification.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
 
 // User.hasMany(Invitation, { as: 'invitations', foreignKey: 'ip', sourceKey: 'ip' });
 // Invitation.belongsTo(User, { as: 'user', foreignKey: 'ip', targetKey: 'ip' });

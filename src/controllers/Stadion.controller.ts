@@ -1,13 +1,13 @@
-import type { NextFunction, Request, Response } from 'express';
-import { Facilitie, Game, Stadion, User } from '../models';
-import { Op } from 'sequelize';
-import path from 'path';
-import * as uuid from 'uuid';
-import StadionFacilitie from '../models/StadionFacilitie.model';
-import { ROLES } from '../types/Roles';
-import bcrypt from 'bcrypt';
-import { RequestWithUser } from '../types/RequestWithUser';
-import StadionNotification from '../models/StadionNotification.model';
+import type { NextFunction, Request, Response } from "express";
+import { Facilitie, Game, Stadion, User } from "../models";
+import { Op } from "sequelize";
+import path from "path";
+import * as uuid from "uuid";
+import StadionFacilitie from "../models/StadionFacilitie.model";
+import { ROLES } from "../types/Roles";
+import bcrypt from "bcrypt";
+import { RequestWithUser } from "../types/RequestWithUser";
+import StadionNotification from "../models/StadionNotification.model";
 
 interface CreateRequest {
   title_en: string;
@@ -22,7 +22,11 @@ interface CreateRequest {
   password: string;
 }
 
-const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
+const create = async (
+  req: Request<{}, {}, CreateRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     let {
       title_en,
@@ -38,9 +42,9 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
     } = req.body;
     const { img } = (req as any).files;
 
-    const type = img.mimetype.split('/')[1];
-    const fileName = uuid.v4() + '.' + type;
-    img.mv(path.resolve(__dirname, '..', 'static', fileName));
+    const type = img.mimetype.split("/")[1];
+    const fileName = uuid.v4() + "." + type;
+    img.mv(path.resolve(__dirname, "..", "static", fileName));
 
     // const user = User.findOrCreate({
     //   where:{ phone},
@@ -71,7 +75,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
     } else {
       const passwordHash = await bcrypt.hash(password, 10);
       const stadionOwner = await User.create({
-        ip: '',
+        ip: "",
         phone,
         name,
         password: passwordHash,
@@ -104,14 +108,20 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
   }
 };
 
-const getAll = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAll = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id, role } = req.user;
     let stadions: Stadion[];
-    if (role === 'ADMIN') {
+    if (role === "ADMIN") {
       stadions = await Stadion.findAll();
       return res.send(stadions);
     }
@@ -127,17 +137,26 @@ const getAll = async (req: RequestWithUser, res: Response, next: NextFunction) =
   }
 };
 
-const getAllForUser = async (req: Request, res: Response, next: NextFunction) => {
+const getAllForUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { language } = req.query;
 
     const stadions = await Stadion.findAll({
-      attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'id', 'img'],
+      attributes: [
+        [`title_${language}`, `title`],
+        [`address_${language}`, `address`],
+        "id",
+        "img",
+      ],
       include: [
         {
           model: Facilitie,
-          as: 'facilities',
-          attributes: [[`title_${language}`, `title`], 'id', 'img'],
+          as: "facilities",
+          attributes: [[`title_${language}`, `title`], "id", "img"],
         },
       ],
     });
@@ -150,7 +169,7 @@ const getAllForUser = async (req: Request, res: Response, next: NextFunction) =>
 
 const search = async (req: Request, res: Response, next: NextFunction) => {
   let { term, language } = req.query;
-  term = term || '';
+  term = term || "";
   try {
     const stadions = await Stadion.findAll({
       where: {
@@ -160,7 +179,7 @@ const search = async (req: Request, res: Response, next: NextFunction) => {
           { title_ru: { [Op.iLike]: `%${term}%` } },
         ],
       },
-      attributes: [[`title_${language}`, `title`], 'id'],
+      attributes: [[`title_${language}`, `title`], "id"],
     });
 
     res.send(stadions);
@@ -174,11 +193,13 @@ const getOne = async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 
     const stadion = await Stadion.findByPk(id, {
-      include: [{ model: Facilitie, as: 'facilities' }],
+      include: [{ model: Facilitie, as: "facilities" }],
     });
 
     if (!stadion) {
-      return res.status(404).json({ success: false, message: 'Stadion not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Stadion not found" });
     }
 
     res.send(stadion);
@@ -191,7 +212,11 @@ interface RemoveRequest {
   ids: number[];
 }
 
-const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: NextFunction) => {
+const remove = async (
+  req: Request<{}, {}, RemoveRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { ids } = req.body;
 
@@ -212,16 +237,23 @@ const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: 
 const update = async (
   req: Request<{ id: string }, {}, CreateRequest>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
-    let { title_en, title_ru, title_am, address_en, address_ru, address_am, facilitiesIds } =
-      req.body;
+    let {
+      title_en,
+      title_ru,
+      title_am,
+      address_en,
+      address_ru,
+      address_am,
+      facilitiesIds,
+    } = req.body;
     const { id } = req.params;
 
     const stadion = await Stadion.findByPk(id);
     if (!stadion) {
-      return res.status(404).json({ message: 'Stadion not found' });
+      return res.status(404).json({ message: "Stadion not found" });
     }
 
     stadion.address_en = address_en;
@@ -233,9 +265,9 @@ const update = async (
     if (req.files) {
       const { img } = (req as any).files;
 
-      const type = img.mimetype.split('/')[1];
-      const fileName = uuid.v4() + '.' + type;
-      img.mv(path.resolve(__dirname, '..', 'static', fileName));
+      const type = img.mimetype.split("/")[1];
+      const fileName = uuid.v4() + "." + type;
+      img.mv(path.resolve(__dirname, "..", "static", fileName));
 
       stadion.img = fileName;
     }
@@ -259,10 +291,16 @@ const update = async (
   }
 };
 
-const getAllNotifications = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAllNotifications = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.user;
     const stadions = await Stadion.findAll({
@@ -276,11 +314,55 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
         stadionId: ids,
       },
       include: [
-        { model: User, as: 'user' },
-        { model: Stadion, as: 'stadion' },
-        { model: Game, as: 'game' },
+        { model: User, as: "user" },
+        { model: Stadion, as: "stadion" },
+        { model: Game, as: "game" },
       ],
     });
+
+    StadionNotification.update(
+      {
+        isNew: false,
+      },
+      {
+        where: {
+          isNew: true,
+          stadionId: ids,
+        },
+      }
+    );
+
+    return res.send(notifications);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getNewNotificationsCount = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id } = req.user;
+    const stadions = await Stadion.findAll({
+      where: {
+        ownerId: id,
+      },
+    });
+    const ids = stadions.map((stadion) => stadion.id);
+    const notifications = await StadionNotification.count({
+      where: {
+        stadionId: ids,
+        isNew: true,
+      },
+    });
+
     return res.send(notifications);
   } catch (error) {
     next(error);
@@ -296,4 +378,5 @@ export default {
   search,
   getAllForUser,
   getAllNotifications,
+  getNewNotificationsCount,
 };

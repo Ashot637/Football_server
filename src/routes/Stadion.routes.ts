@@ -1,25 +1,42 @@
-import Router from 'express';
-import { StadionController } from '../controllers';
-import { ROLES } from '../types/Roles';
-import checkRole from '../middlewares/checkRole';
+import Router from "express";
+import { StadionController } from "../controllers";
+import { ROLES } from "../types/Roles";
+import checkRole from "../middlewares/checkRole";
 const router = Router();
 
-router.get('/stadion/getAllForUser', StadionController.getAllForUser);
-router.get('/stadion/getOne/:id', StadionController.getOne);
-router.get('/stadion/search', StadionController.search);
+router.get("/stadion/getAllForUser", StadionController.getAllForUser);
+router.get("/stadion/getOne/:id", StadionController.getOne);
+router.get("/stadion/search", StadionController.search);
 
 router.get(
-  '/stadion/getAll',
+  "/stadion/getAll",
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER),
-  StadionController.getAll,
+  StadionController.getAll
 );
-router.post('/stadion/create', checkRole(ROLES.ADMIN), StadionController.create);
+router.post(
+  "/stadion/create",
+  checkRole(ROLES.ADMIN),
+  StadionController.create
+);
 router.get(
-  '/stadion/getAllNotifications',
+  "/stadion/getAllNotifications",
   checkRole(ROLES.STADION_OWNER),
-  StadionController.getAllNotifications,
+  StadionController.getAllNotifications
 );
-router.delete('/stadion/delete', checkRole(ROLES.ADMIN), StadionController.remove);
-router.patch('/stadion/update/:id', checkRole(ROLES.ADMIN), StadionController.update);
+router.get(
+  "/stadion/getNewNotificationsCount",
+  checkRole(ROLES.STADION_OWNER),
+  StadionController.getNewNotificationsCount
+);
+router.delete(
+  "/stadion/delete",
+  checkRole(ROLES.ADMIN),
+  StadionController.remove
+);
+router.patch(
+  "/stadion/update/:id",
+  checkRole(ROLES.ADMIN),
+  StadionController.update
+);
 
 export default router;

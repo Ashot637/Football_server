@@ -1,10 +1,19 @@
-import type { NextFunction, Request, Response } from 'express';
-import { Facilitie, Game, Stadion, User, UserGame, Group, UserGroup, Invitation } from '../models';
-import { type RequestWithUser } from '../types/RequestWithUser';
-import { Op, type WhereOptions } from 'sequelize';
-import dayjs from 'dayjs';
-import { ROLES } from '../types/Roles';
-import StadionNotification from '../models/StadionNotification.model';
+import type { NextFunction, Request, Response } from "express";
+import {
+  Facilitie,
+  Game,
+  Stadion,
+  User,
+  UserGame,
+  Group,
+  UserGroup,
+  Invitation,
+} from "../models";
+import { type RequestWithUser } from "../types/RequestWithUser";
+import { Op, type WhereOptions } from "sequelize";
+import dayjs from "dayjs";
+import { ROLES } from "../types/Roles";
+import StadionNotification from "../models/StadionNotification.model";
 
 interface CreateRequest {
   price: number;
@@ -15,9 +24,14 @@ interface CreateRequest {
   range: 1 | 4;
 }
 
-const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
+const create = async (
+  req: Request<{}, {}, CreateRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { price, startTime, endTime, maxPlayersCount, stadionId, range } = req.body;
+    const { price, startTime, endTime, maxPlayersCount, stadionId, range } =
+      req.body;
 
     const group = await Group.create();
 
@@ -43,31 +57,31 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
         },
         {
           price,
-          startTime: dayjs(startTime).add(1, 'week').toDate(),
-          endTime: dayjs(endTime).add(1, 'week').toDate(),
+          startTime: dayjs(startTime).add(1, "week").toDate(),
+          endTime: dayjs(endTime).add(1, "week").toDate(),
           maxPlayersCount,
           stadionId,
           groupId: group.id,
         },
         {
           price,
-          startTime: dayjs(startTime).add(2, 'week').toDate(),
-          endTime: dayjs(endTime).add(2, 'week').toDate(),
+          startTime: dayjs(startTime).add(2, "week").toDate(),
+          endTime: dayjs(endTime).add(2, "week").toDate(),
           maxPlayersCount,
           stadionId,
           groupId: group.id,
         },
         {
           price,
-          startTime: dayjs(startTime).add(3, 'week').toDate(),
-          endTime: dayjs(endTime).add(3, 'week').toDate(),
+          startTime: dayjs(startTime).add(3, "week").toDate(),
+          endTime: dayjs(endTime).add(3, "week").toDate(),
           maxPlayersCount,
           stadionId,
           groupId: group.id,
         },
       ]);
     } else {
-      return res.status(400).send({ success: false, message: 'Missing range' });
+      return res.status(400).send({ success: false, message: "Missing range" });
     }
 
     return res.send(data);
@@ -76,10 +90,16 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
   }
 };
 
-const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const organizerCreate = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -117,8 +137,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           creatorId: userId,
         },
         {
-          startTime: dayjs(startTime).add(1, 'week').toDate(),
-          endTime: dayjs(endTime).add(1, 'week').toDate(),
+          startTime: dayjs(startTime).add(1, "week").toDate(),
+          endTime: dayjs(endTime).add(1, "week").toDate(),
           price: price || 0,
           maxPlayersCount: 99,
           stadionId,
@@ -127,8 +147,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           creatorId: userId,
         },
         {
-          startTime: dayjs(startTime).add(2, 'week').toDate(),
-          endTime: dayjs(endTime).add(2, 'week').toDate(),
+          startTime: dayjs(startTime).add(2, "week").toDate(),
+          endTime: dayjs(endTime).add(2, "week").toDate(),
           price: price || 0,
           maxPlayersCount: 99,
           stadionId,
@@ -137,8 +157,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           creatorId: userId,
         },
         {
-          startTime: dayjs(startTime).add(3, 'week').toDate(),
-          endTime: dayjs(endTime).add(3, 'week').toDate(),
+          startTime: dayjs(startTime).add(3, "week").toDate(),
+          endTime: dayjs(endTime).add(3, "week").toDate(),
           price: price || 0,
           maxPlayersCount: 99,
           stadionId,
@@ -155,11 +175,15 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         });
       });
     } else {
-      return res.json(400).send({ success: false, message: 'Missing range' });
+      return res.json(400).send({ success: false, message: "Missing range" });
     }
 
     const stadion = await Stadion.findByPk(stadionId, {
-      attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'title_en'],
+      attributes: [
+        [`title_${language}`, `title`],
+        [`address_${language}`, `address`],
+        "title_en",
+      ],
     });
 
     await UserGroup.create({
@@ -172,6 +196,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         userId,
         gameId: game.id,
         stadionId,
+        isNew: true,
       });
       return res.send({ game: { ...game.toJSON(), stadion }, success: true });
     } else if (games) {
@@ -180,19 +205,29 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           userId,
           gameId: game.id,
           stadionId,
+          isNew: true,
         });
       });
-      return res.send({ game: { ...games.at(0)?.toJSON(), stadion }, success: true });
+      return res.send({
+        game: { ...games.at(0)?.toJSON(), stadion },
+        success: true,
+      });
     }
   } catch (error) {
     next(error);
   }
 };
 
-const extendGame = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const extendGame = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { groupId } = req.body;
@@ -201,16 +236,18 @@ const extendGame = async (req: RequestWithUser, res: Response, next: NextFunctio
       where: {
         groupId,
       },
-      order: [['startTime', 'DESC']],
+      order: [["startTime", "DESC"]],
     });
 
     if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     const newGame = await Game.create({
-      startTime: dayjs(game.startTime).add(1, 'week').toDate(),
-      endTime: dayjs(game?.endTime).add(1, 'week').toDate(),
+      startTime: dayjs(game.startTime).add(1, "week").toDate(),
+      endTime: dayjs(game?.endTime).add(1, "week").toDate(),
       price: game.price || 0,
       maxPlayersCount: 99,
       stadionId: game?.stadionId,
@@ -225,10 +262,16 @@ const extendGame = async (req: RequestWithUser, res: Response, next: NextFunctio
   }
 };
 
-const getAllGroupGames = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAllGroupGames = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -240,7 +283,9 @@ const getAllGroupGames = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!userGames) {
-      return res.status(404).json({ success: false, message: 'Games not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Games not found" });
     }
 
     if (!userGames.length) {
@@ -259,18 +304,22 @@ const getAllGroupGames = async (req: RequestWithUser, res: Response, next: NextF
       include: [
         {
           model: User,
-          as: 'users',
+          as: "users",
           where: {
             id: userId,
           },
         },
         {
           model: Stadion,
-          as: 'stadion',
-          attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'img'],
+          as: "stadion",
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+            "img",
+          ],
         },
       ],
-      order: [['startTime', 'ASC']],
+      order: [["startTime", "ASC"]],
     });
 
     return res.send(games);
@@ -282,19 +331,21 @@ const getAllGroupGames = async (req: RequestWithUser, res: Response, next: NextF
 const changeWillPlayGameStatus = async (
   req: RequestWithUser,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { id, status, prevStatus } = req.body;
 
     if (status) {
-      Game.increment('playersCount', { by: 1, where: { id } });
+      Game.increment("playersCount", { by: 1, where: { id } });
     } else if (status === null && prevStatus) {
-      Game.decrement('playersCount', { by: 1, where: { id } });
+      Game.decrement("playersCount", { by: 1, where: { id } });
     }
 
     UserGame.update(
@@ -306,7 +357,7 @@ const changeWillPlayGameStatus = async (
           gameId: id,
           userId,
         },
-      },
+      }
     );
 
     return res.send({ success: true });
@@ -315,10 +366,16 @@ const changeWillPlayGameStatus = async (
   }
 };
 
-const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const acceptInvitation = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { id, groupId } = req.body;
@@ -331,7 +388,9 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!invitation) {
-      return res.status(404).json({ success: false, message: 'Invitation not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Invitation not found" });
     }
 
     const games = await Game.findAll({
@@ -341,7 +400,9 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!games) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     for (const game of games) {
@@ -372,7 +433,9 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!group) {
-      return res.status(404).json({ success: false, message: 'Group not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Group not found" });
     }
 
     await UserGroup.create({
@@ -386,10 +449,16 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
   }
 };
 
-const declineInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const declineInvitation = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.body;
 
@@ -415,13 +484,13 @@ const declineInvitation = async (req: RequestWithUser, res: Response, next: Next
 
 interface GetAllRequest {
   date?: string;
-  language?: 'en' | 'ru' | 'am';
+  language?: "en" | "ru" | "am";
 }
 
 const getAll = async (
   req: Request<{}, {}, {}, GetAllRequest>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const { date, language } = req.query;
@@ -429,10 +498,26 @@ const getAll = async (
     if (date) {
       const day = new Date(date);
       const startOfDay = new Date(
-        Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, 0, 0, 0),
+        Date.UTC(
+          day.getUTCFullYear(),
+          day.getUTCMonth(),
+          day.getUTCDate(),
+          0,
+          0,
+          0,
+          0
+        )
       );
       const endOfDay = new Date(
-        Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 23, 59, 59, 999),
+        Date.UTC(
+          day.getUTCFullYear(),
+          day.getUTCMonth(),
+          day.getUTCDate(),
+          23,
+          59,
+          59,
+          999
+        )
       );
       WHERE = {
         where: {
@@ -469,26 +554,26 @@ const getAll = async (
         include: [
           {
             model: Stadion,
-            as: 'stadion',
+            as: "stadion",
             attributes: [
               [`title_${language}`, `title`],
               [`address_${language}`, `address`],
-              'id',
-              'img',
+              "id",
+              "img",
             ],
           },
         ],
         order: [
-          ['playersCount', 'DESC'],
-          ['startTime', 'DESC'],
+          ["playersCount", "DESC"],
+          ["startTime", "DESC"],
         ],
       });
     } else {
       games = await Game.findAll({
-        include: [{ model: Stadion, as: 'stadion' }],
+        include: [{ model: Stadion, as: "stadion" }],
         order: [
-          ['startTime', 'DESC'],
-          ['playersCount', 'DESC'],
+          ["startTime", "DESC"],
+          ["playersCount", "DESC"],
         ],
       });
     }
@@ -499,7 +584,11 @@ const getAll = async (
   }
 };
 
-const getByStadionId = async (req: Request, res: Response, next: NextFunction) => {
+const getByStadionId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { language } = req.query;
     const { stadionId } = req.params;
@@ -515,18 +604,18 @@ const getByStadionId = async (req: Request, res: Response, next: NextFunction) =
       include: [
         {
           model: Stadion,
-          as: 'stadion',
+          as: "stadion",
           attributes: [
             [`title_${language}`, `title`],
             [`address_${language}`, `address`],
-            'id',
-            'img',
+            "id",
+            "img",
           ],
         },
       ],
       order: [
-        ['playersCount', 'DESC'],
-        ['startTime', 'DESC'],
+        ["playersCount", "DESC"],
+        ["startTime", "DESC"],
       ],
     });
 
@@ -537,31 +626,39 @@ const getByStadionId = async (req: Request, res: Response, next: NextFunction) =
 };
 
 interface GetOneRequest {
-  language?: 'en' | 'ru' | 'am';
+  language?: "en" | "ru" | "am";
 }
 
-const getAllFromAdminPanel = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAllFromAdminPanel = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id, role } = req.user;
     let games: Game[];
     if (role === ROLES.ADMIN) {
       games = await Game.findAll({
-        include: [{ model: Stadion, as: 'stadion' }],
+        include: [{ model: Stadion, as: "stadion" }],
         order: [
-          ['startTime', 'DESC'],
-          ['playersCount', 'DESC'],
+          ["startTime", "DESC"],
+          ["playersCount", "DESC"],
         ],
       });
     } else {
-      const stadionsIds = (await Stadion.findAll({ where: { ownerId: id } })).map((x) => x.id);
+      const stadionsIds = (
+        await Stadion.findAll({ where: { ownerId: id } })
+      ).map((x) => x.id);
       games = await Game.findAll({
         where: {
           stadionId: stadionsIds,
         },
-        include: [{ model: Stadion, as: 'stadion' }],
+        include: [{ model: Stadion, as: "stadion" }],
       });
     }
     return res.send(games);
@@ -573,7 +670,7 @@ const getAllFromAdminPanel = async (req: RequestWithUser, res: Response, next: N
 const getOne = async (
   req: Request<{ id: string }, {}, {}, GetOneRequest>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -585,36 +682,42 @@ const getOne = async (
         include: [
           {
             model: Stadion,
-            as: 'stadion',
+            as: "stadion",
             attributes: [
               [`title_${language}`, `title`],
               [`address_${language}`, `address`],
-              'title_en',
-              'id',
-              'img',
+              "title_en",
+              "id",
+              "img",
             ],
             include: [
               {
                 model: Facilitie,
-                as: 'facilities',
-                attributes: [[`title_${language}`, `title`], 'id', 'img'],
+                as: "facilities",
+                attributes: [[`title_${language}`, `title`], "id", "img"],
               },
             ],
           },
-          { model: User, as: 'users' },
+          { model: User, as: "users" },
         ],
       });
     } else {
       game = await Game.findByPk(id, {
         include: [
-          { model: Stadion, as: 'stadion', include: [{ model: Facilitie, as: 'facilities' }] },
-          { model: User, as: 'users' },
+          {
+            model: Stadion,
+            as: "stadion",
+            include: [{ model: Facilitie, as: "facilities" }],
+          },
+          { model: User, as: "users" },
         ],
       });
     }
 
     if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     if (game.isPublic) {
@@ -636,7 +739,7 @@ const getOne = async (
         include: [
           {
             model: Game,
-            as: 'games',
+            as: "games",
             where: {
               id: game.id,
             },
@@ -654,10 +757,11 @@ const getOne = async (
           if (user.games[0].UserGame.willPlay) {
             acc.usersWillPlayCount++;
             //@ts-ignore
-          } else if (user.games[0].UserGame.willPlay === false) acc.usersWontPlayCount++;
+          } else if (user.games[0].UserGame.willPlay === false)
+            acc.usersWontPlayCount++;
           return acc;
         },
-        { usersWillPlayCount: 0, usersWontPlayCount: 0 },
+        { usersWillPlayCount: 0, usersWontPlayCount: 0 }
       );
 
     return res.send({
@@ -674,7 +778,11 @@ interface RemoveRequest {
   ids: number[];
 }
 
-const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: NextFunction) => {
+const remove = async (
+  req: Request<{}, {}, RemoveRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { ids } = req.body;
 
@@ -695,7 +803,7 @@ const remove = async (req: Request<{}, {}, RemoveRequest>, res: Response, next: 
 const update = async (
   req: Request<{ id: string }, {}, CreateRequest>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
@@ -714,11 +822,11 @@ const update = async (
           id: id,
         },
         returning: true,
-      },
+      }
     );
 
     if (rowsUpdated === 0) {
-      return res.status(404).json({ message: 'Game not found' });
+      return res.status(404).json({ message: "Game not found" });
     }
 
     res.json(updatedGame);
@@ -727,10 +835,16 @@ const update = async (
   }
 };
 
-const register = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const register = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { gameId } = req.params;
@@ -738,19 +852,23 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
 
     const game = await Game.findByPk(gameId, {
       include: [
-        { model: Group, as: 'group', attributes: ['id'] },
-        { model: Stadion, as: 'stadion', attributes: ['title_en'] },
+        { model: Group, as: "group", attributes: ["id"] },
+        { model: Stadion, as: "stadion", attributes: ["title_en"] },
       ],
     });
 
-    game?.increment('playersCount', { by: 1 });
+    game?.increment("playersCount", { by: 1 });
 
     if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     if (game.playersCount === game.maxPlayersCount) {
-      return res.status(403).json({ success: false, message: 'Already have maximum players' });
+      return res
+        .status(403)
+        .json({ success: false, message: "Already have maximum players" });
     }
 
     const userGame = await UserGame.create({
@@ -762,14 +880,16 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
 
     const userGroup = await UserGroup.findOne({
       where: {
-        groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
+        groupId: (game.dataValues as Game & { group: Group }).group.dataValues
+          .id,
         userId,
       },
     });
 
     if (!userGroup) {
       UserGroup.create({
-        groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
+        groupId: (game.dataValues as Game & { group: Group }).group.dataValues
+          .id,
         userId,
       });
     }
@@ -780,10 +900,16 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
   }
 };
 
-const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getUpcomingGames = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -796,7 +922,9 @@ const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!userGames) {
-      return res.status(404).json({ success: false, message: 'Games not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Games not found" });
     }
 
     if (!userGames.length) {
@@ -815,18 +943,22 @@ const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextF
       include: [
         {
           model: User,
-          as: 'users',
+          as: "users",
           where: {
             id: userId,
           },
         },
         {
           model: Stadion,
-          as: 'stadion',
-          attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'img'],
+          as: "stadion",
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+            "img",
+          ],
         },
       ],
-      order: [['startTime', 'ASC']],
+      order: [["startTime", "ASC"]],
     });
 
     res.send(games);
@@ -835,10 +967,16 @@ const getUpcomingGames = async (req: RequestWithUser, res: Response, next: NextF
   }
 };
 
-const getActivity = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getActivity = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -851,7 +989,9 @@ const getActivity = async (req: RequestWithUser, res: Response, next: NextFuncti
     });
 
     if (!userGames) {
-      return res.status(404).json({ success: false, message: 'Games not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Games not found" });
     }
 
     if (!userGames.length) {
@@ -870,21 +1010,21 @@ const getActivity = async (req: RequestWithUser, res: Response, next: NextFuncti
       include: [
         {
           model: User,
-          as: 'users',
+          as: "users",
           where: {
             id: userId,
           },
         },
         {
           model: Stadion,
-          as: 'stadion',
+          as: "stadion",
           attributes: [
             [`title_${language}`, `title`],
             [`address_${language}`, `address`],
           ],
         },
       ],
-      order: [['startTime', 'ASC']],
+      order: [["startTime", "ASC"]],
     });
 
     res.send(games);
@@ -893,20 +1033,28 @@ const getActivity = async (req: RequestWithUser, res: Response, next: NextFuncti
   }
 };
 
-const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const cancel = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { gameId } = req.params;
 
     const game = await Game.findByPk(gameId, {
-      include: { model: Group, as: 'group', attributes: ['id'] },
+      include: { model: Group, as: "group", attributes: ["id"] },
     });
 
     if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     const gameToCancel = await UserGame.findOne({
@@ -917,7 +1065,9 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
     });
 
     if (!gameToCancel) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
     }
 
     await UserGame.destroy({
@@ -927,7 +1077,7 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
       },
     });
 
-    game?.decrement('playersCount', { by: 1 });
+    game?.decrement("playersCount", { by: 1 });
 
     // UserGroup.destroy({
     //   where: {
@@ -942,10 +1092,16 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
   }
 };
 
-const getAllCreated = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAllCreated = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -960,11 +1116,15 @@ const getAllCreated = async (req: RequestWithUser, res: Response, next: NextFunc
       include: [
         {
           model: Stadion,
-          as: 'stadion',
-          attributes: [[`title_${language}`, `title`], [`address_${language}`, `address`], 'img'],
+          as: "stadion",
+          attributes: [
+            [`title_${language}`, `title`],
+            [`address_${language}`, `address`],
+            "img",
+          ],
         },
       ],
-      order: [['startTime', 'ASC']],
+      order: [["startTime", "ASC"]],
     });
 
     res.send(games);

@@ -332,7 +332,7 @@ const getAllNotifications = async (
       }
     );
 
-    return res.send(notifications);
+    return res.json(notifications);
   } catch (error) {
     next(error);
   }

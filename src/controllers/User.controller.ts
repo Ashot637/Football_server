@@ -1,14 +1,14 @@
-import { Game, Invitation, Stadion, User, UserGame } from '../models';
-import jwt from 'jsonwebtoken';
-import type { NextFunction, Request, Response } from 'express';
-import { ROLES } from '../types/Roles';
-import type { RequestWithUser } from '../types/RequestWithUser';
-import { generateCode } from '../helpers/generateCode';
-import * as uuid from 'uuid';
-import fs from 'fs';
-import path from 'path';
-import bcrypt from 'bcrypt';
-import { Op } from 'sequelize';
+import { Game, Invitation, Stadion, User, UserGame } from "../models";
+import jwt from "jsonwebtoken";
+import type { NextFunction, Request, Response } from "express";
+import { ROLES } from "../types/Roles";
+import type { RequestWithUser } from "../types/RequestWithUser";
+import { generateCode } from "../helpers/generateCode";
+import * as uuid from "uuid";
+import fs from "fs";
+import path from "path";
+import bcrypt from "bcrypt";
+import { Op } from "sequelize";
 
 interface RegisterRequest {
   name: string;
@@ -22,14 +22,14 @@ const usersToVerify: Record<string, number> = {};
 const register = async (
   req: Request<{}, {}, RegisterRequest>,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const { name, phone } = req.body;
     const condidate = await User.findOne({ where: { phone } });
 
     if (condidate) {
-      return res.status(400).json({ success: false, message: 'PHONE_IN_USE' });
+      return res.status(400).json({ success: false, message: "PHONE_IN_USE" });
     }
 
     return res.send({ success: true, phone, name });
@@ -38,7 +38,11 @@ const register = async (
   }
 };
 
-const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next: NextFunction) => {
+const login = async (
+  req: Request<{}, {}, RegisterRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { phone, password, expoPushToken } = req.body;
 
@@ -46,17 +50,25 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
       where: { phone },
     });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
+      return res
+        .status(401)
+        .json({ success: false, message: "INVALID_PHONE_OR_PASWORD" });
     }
 
     const comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
-      return res.status(500).json({ success: false, message: 'INVALID_PHONE_OR_PASWORD' });
+      return res
+        .status(500)
+        .json({ success: false, message: "INVALID_PHONE_OR_PASWORD" });
     }
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
-      expiresIn: '7d',
-    });
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.SECRET_KEY!,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     user.expoPushToken = expoPushToken;
     user.save();
@@ -76,7 +88,7 @@ const checkPhone = async (req: Request, res: Response, next: NextFunction) => {
     });
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'INVALID_PHONE' });
+      return res.status(401).json({ success: false, message: "INVALID_PHONE" });
     }
 
     user.expoPushToken = expoPushToken;
@@ -85,9 +97,9 @@ const checkPhone = async (req: Request, res: Response, next: NextFunction) => {
     const code = generateCode();
 
     usersToVerify[phone] = code;
-    console.log('====================================');
+    console.log("====================================");
     console.log(usersToVerify);
-    console.log('====================================');
+    console.log("====================================");
 
     return res.send({ success: true });
   } catch (error) {
@@ -99,16 +111,20 @@ const checkCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone, code } = req.body;
 
-    if (code === '1234') {
+    if (code === "1234") {
       return res.send({ success: true });
     }
-    return res.status(401).json({ success: false, message: 'INVALID_CODE' });
+    return res.status(401).json({ success: false, message: "INVALID_CODE" });
   } catch (error) {
     next(error);
   }
 };
 
-const generateUserCode = async (req: Request, res: Response, next: NextFunction) => {
+const generateUserCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { phone } = req.body;
     const code = generateCode();
@@ -121,33 +137,43 @@ const generateUserCode = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-const regenerateUserCode = async (req: Request, res: Response, next: NextFunction) => {
+const regenerateUserCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { phone } = req.body;
     const code = generateCode();
 
     usersToVerify[phone] = code;
 
-    console.log('====================================');
+    console.log("====================================");
     console.log(usersToVerify);
-    console.log('====================================');
+    console.log("====================================");
     return res.json({ success: true });
   } catch (error) {
     next(error);
   }
 };
 
-const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+const changePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { phone, code, password } = req.body;
 
     if (1234 !== +code) {
-      return res.status(400).json({ success: false, message: 'INVALID_CODE' });
+      return res.status(400).json({ success: false, message: "INVALID_CODE" });
     }
 
     const user = await User.findOne({ where: { phone } });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -156,9 +182,13 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 
     delete usersToVerify[phone];
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
-      expiresIn: '7d',
-    });
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.SECRET_KEY!,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     return res.send({ ...user.dataValues, accessToken });
   } catch (error) {
@@ -175,12 +205,16 @@ interface CodeRequest {
   ip: string;
 }
 
-const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: NextFunction) => {
+const code = async (
+  req: Request<{}, {}, CodeRequest>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { phone, code, name, password, expoPushToken, ip } = req.body;
     let { language } = req.query;
 
-    language = language || 'am';
+    language = language || "am";
 
     if (!usersToVerify[phone]) {
       return res.status(400).json({ success: false });
@@ -198,9 +232,13 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
         role: ROLES.USER,
       });
 
-      const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
-        expiresIn: '7d',
-      });
+      const accessToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.SECRET_KEY!,
+        {
+          expiresIn: "7d",
+        }
+      );
 
       delete usersToVerify[phone];
 
@@ -222,7 +260,7 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
         include: [
           {
             model: Stadion,
-            as: 'stadion',
+            as: "stadion",
             attributes: [[`title_${language}`, `title`]],
           },
         ],
@@ -230,16 +268,21 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
 
       if (games?.length) {
         invitations = invitations.map((invitation) => {
-          const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
+          const game = games.find(
+            (game) => game.groupId === invitation.groupId
+          ) as Game & {
             dataValues: { stadion: { dataValues: { title: string } } };
             startTime: string;
           };
           return {
-            ...invitation.dataValues,
-            stadion: game.dataValues.stadion.dataValues.title,
-            startTime: game.startTime,
+            ...invitation?.dataValues,
+            stadion: game?.dataValues?.stadion?.dataValues?.title,
+            startTime: game?.startTime,
           };
-        }) as unknown as (Invitation & { stadion: string; startTime: string })[];
+        }) as unknown as (Invitation & {
+          stadion: string;
+          startTime: string;
+        })[];
       }
 
       if (!games?.length) {
@@ -248,27 +291,39 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
 
       return res.send({ ...user.dataValues, accessToken, invitations });
     }
-    return res.status(400).json({ success: false, message: 'INVALID_CODE' });
+    return res.status(400).json({ success: false, message: "INVALID_CODE" });
   } catch (error) {
     next(error);
   }
 };
 
-const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const authMe = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id, role } = req.user;
     if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
       const user = await User.findByPk(id);
       if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
       }
 
-      const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
-        expiresIn: '7d',
-      });
+      const accessToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.SECRET_KEY!,
+        {
+          expiresIn: "7d",
+        }
+      );
 
       return res.send({ ...user.dataValues, accessToken });
     }
@@ -276,17 +331,23 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     await User.update(
       { expoPushToken: expoPushToken as string, ip: ip as string },
-      { where: { id } },
+      { where: { id } }
     );
 
     const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
-      expiresIn: '7d',
-    });
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.SECRET_KEY!,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     let invitations = await Invitation.findAll({
       where: {
@@ -306,7 +367,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       include: [
         {
           model: Stadion,
-          as: 'stadion',
+          as: "stadion",
           attributes: [[`title_${language}`, `title`]],
         },
       ],
@@ -314,7 +375,9 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     if (games?.length) {
       invitations = invitations.map((invitation) => {
-        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
+        const game = games.find(
+          (game) => game.groupId === invitation.groupId
+        ) as Game & {
           dataValues: { stadion: { dataValues: { title: string } } };
           startTime: string;
         };
@@ -342,10 +405,16 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const update = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const update = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.user;
     const { name, phone, email, address, prevImg } = req.body;
@@ -357,12 +426,12 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     let fileName;
     if (img) {
-      const type = img.mimetype.split('/')[1];
-      fileName = uuid.v4() + '.' + type;
-      img.mv(path.resolve(__dirname, '..', 'static', fileName));
+      const type = img.mimetype.split("/")[1];
+      fileName = uuid.v4() + "." + type;
+      img.mv(path.resolve(__dirname, "..", "static", fileName));
 
       if (prevImg) {
-        const prevImgPath = path.resolve(__dirname, '..', 'static', prevImg);
+        const prevImgPath = path.resolve(__dirname, "..", "static", prevImg);
         fs.unlink(prevImgPath, () => {});
       }
     }
@@ -381,11 +450,13 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
           id,
         },
         returning: true,
-      },
+      }
     );
 
     if (affectedRowsCount == 0) {
-      return res.status(400).json({ success: false, message: 'Something went wrong' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Something went wrong" });
     }
     res.send(updatedUser);
   } catch (error) {
@@ -401,11 +472,11 @@ const getOne = async (req: Request, res: Response, next: NextFunction) => {
       include: [
         {
           model: Game,
-          as: 'games',
-          include: [{ model: Stadion, as: 'stadion' }],
+          as: "games",
+          include: [{ model: Stadion, as: "stadion" }],
           order: [
-            ['startTime', 'DESC'],
-            ['playersCount', 'DESC'],
+            ["startTime", "DESC"],
+            ["playersCount", "DESC"],
           ],
         },
       ],
@@ -417,18 +488,24 @@ const getOne = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const logout = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const logout = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.user;
 
     User.update(
       {
-        expoPushToken: '',
+        expoPushToken: "",
       },
-      { where: { id } },
+      { where: { id } }
     );
     res.send({ success: true });
   } catch (error) {
@@ -436,10 +513,16 @@ const logout = async (req: RequestWithUser, res: Response, next: NextFunction) =
   }
 };
 
-const remove = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const remove = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
 
@@ -465,7 +548,7 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
       });
 
       for (const game of games) {
-        game.decrement('playersCount', { by: 1 });
+        game.decrement("playersCount", { by: 1 });
       }
     }
 

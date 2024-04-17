@@ -387,7 +387,7 @@ const authMe = async (
         };
         if (
           // @ts-ignore
-          user.dataValues.games.dataValues.find(
+          user.dataValues.games.find(
             // @ts-ignore
             (g) => g.groupId === game.groupId
           )

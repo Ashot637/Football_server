@@ -336,7 +336,9 @@ const authMe = async (
       { where: { id } }
     );
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      include: { model: Game, as: "games" },
+    });
     if (!user) {
       return res
         .status(404)

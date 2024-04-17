@@ -397,6 +397,7 @@ const authMe = async (
             stadion: game.dataValues.stadion.dataValues.title,
             startTime: game.startTime,
             hasGame: true,
+            gameId: game.id,
           };
         }
         return {

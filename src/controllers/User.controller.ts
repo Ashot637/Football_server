@@ -310,7 +310,9 @@ const authMe = async (
     }
     const { id, role } = req.user;
     if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
-      const user = await User.findByPk(id);
+      const user = await User.findByPk(id, {
+        include: { model: Game, as: "games" },
+      });
       if (!user) {
         return res
           .status(404)
@@ -381,12 +383,27 @@ const authMe = async (
           dataValues: { stadion: { dataValues: { title: string } } };
           startTime: string;
         };
+        if (
+          // @ts-ignore
+          user.dataValues.games.datavalues.find(
+            // @ts-ignore
+            (g) => g.groupId === game.groupId
+          )
+        ) {
+          return {
+            ...invitation.dataValues,
+            stadion: game.dataValues.stadion.dataValues.title,
+            startTime: game.startTime,
+            hasGame: true,
+          };
+        }
         return {
           ...invitation.dataValues,
           stadion: game.dataValues.stadion.dataValues.title,
           startTime: game.startTime,
+          hasGame: false,
         };
-      }) as unknown as (Invitation & { stadion: string; startTime: string })[];
+      }) as unknown as Invitation[];
     }
 
     res.send({ ...user.dataValues, accessToken, invitations });

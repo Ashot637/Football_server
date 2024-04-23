@@ -45,9 +45,14 @@ const login = async (
 ) => {
   try {
     const { phone, password, expoPushToken } = req.body;
+    const { language } = req.query;
 
     const user = await User.findOne({
       where: { phone },
+      include: {
+        model: Game,
+        as: "games",
+      },
     });
     if (!user) {
       return res
@@ -73,7 +78,63 @@ const login = async (
     user.expoPushToken = expoPushToken;
     user.save();
 
-    return res.send({ ...user.dataValues, accessToken });
+    let invitations = await Invitation.findAll({
+      where: {
+        ip: user.ip,
+      },
+    });
+
+    const ids = invitations.map((x) => x.groupId);
+
+    const games = await Game.findAll({
+      where: {
+        groupId: ids,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: Stadion,
+          as: "stadion",
+          attributes: [[`title_${language}`, `title`]],
+        },
+      ],
+    });
+
+    if (games?.length) {
+      invitations = invitations.map((invitation) => {
+        const game = games.find(
+          (game) => game.groupId === invitation.groupId
+        ) as Game & {
+          dataValues: { stadion: { dataValues: { title: string } } };
+          startTime: string;
+        };
+        if (
+          // @ts-ignore
+          user.dataValues.games.find(
+            // @ts-ignore
+            (g) => g.groupId === game.groupId
+          )
+        ) {
+          return {
+            ...invitation.dataValues,
+            stadion: game.dataValues.stadion.dataValues.title,
+            startTime: game.startTime,
+            hasGame: true,
+            gameId: game.id,
+          };
+        }
+        return {
+          ...invitation.dataValues,
+          stadion: game.dataValues.stadion.dataValues.title,
+          startTime: game.startTime,
+          hasGame: false,
+        };
+      }) as unknown as Invitation[];
+    }
+
+    return res.send({ ...user.dataValues, accessToken, invitations });
   } catch (error) {
     next(error);
   }
@@ -408,6 +469,7 @@ const authMe = async (
         };
       }) as unknown as Invitation[];
     }
+
 
     res.send({ ...user.dataValues, accessToken, invitations });
   } catch (error) {

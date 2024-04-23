@@ -103,9 +103,8 @@ const organizerCreate = async (
     }
     const { id: userId } = req.user;
     const { language } = req.query;
-    const { price, startTime, endTime, stadionId, range } = req.body;
+    const { groupId, price, startTime, endTime, stadionId, range } = req.body;
 
-    const group = await Group.create();
     let game: Game | undefined;
     let games: Game[] | undefined;
     if (range === 1) {
@@ -116,7 +115,7 @@ const organizerCreate = async (
         maxPlayersCount: 99,
         stadionId,
         isPublic: false,
-        groupId: group.id,
+        groupId,
         creatorId: userId,
       });
       UserGame.create({
@@ -133,7 +132,7 @@ const organizerCreate = async (
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
-          groupId: group.id,
+          groupId,
           creatorId: userId,
         },
         {
@@ -143,7 +142,7 @@ const organizerCreate = async (
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
-          groupId: group.id,
+          groupId,
           creatorId: userId,
         },
         {
@@ -153,7 +152,7 @@ const organizerCreate = async (
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
-          groupId: group.id,
+          groupId,
           creatorId: userId,
         },
         {
@@ -163,7 +162,7 @@ const organizerCreate = async (
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
-          groupId: group.id,
+          groupId,
           creatorId: userId,
         },
       ]);
@@ -184,11 +183,6 @@ const organizerCreate = async (
         [`address_${language}`, `address`],
         "title_en",
       ],
-    });
-
-    await UserGroup.create({
-      groupId: group.id,
-      userId,
     });
 
     if (game) {
@@ -461,16 +455,6 @@ const declineInvitation = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.body;
-
-    // const invitation = await Invitation.findOne({
-    //   where: {
-    //     id,
-    //   },
-    // });
-
-    // if (!invitation) {
-    //   return res.status(404).json({ success: false, message: 'Invitation not found' });
-    // }
 
     Invitation.destroy({
       where: { id },

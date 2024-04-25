@@ -8,6 +8,7 @@ import {
   Group,
   UserGroup,
   Invitation,
+  GameUniforms,
 } from "../models";
 import { type RequestWithUser } from "../types/RequestWithUser";
 import { Op, type WhereOptions } from "sequelize";
@@ -30,61 +31,24 @@ const create = async (
   next: NextFunction
 ) => {
   try {
-    const { price, startTime, endTime, maxPlayersCount, stadionId, range } =
-      req.body;
+    const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
 
-    const group = await Group.create();
+    const group = await Group.create({
+      ownerId: -1,
+      title: "Public",
+      forPublic: true,
+    });
 
-    let data: Game | Game[];
-    if (range === 1) {
-      data = await Game.create({
-        price,
-        startTime,
-        endTime,
-        maxPlayersCount,
-        stadionId,
-        groupId: group.id,
-      });
-    } else if (range === 4) {
-      data = await Game.bulkCreate([
-        {
-          price,
-          startTime,
-          endTime,
-          maxPlayersCount,
-          stadionId,
-          groupId: group.id,
-        },
-        {
-          price,
-          startTime: dayjs(startTime).add(1, "week").toDate(),
-          endTime: dayjs(endTime).add(1, "week").toDate(),
-          maxPlayersCount,
-          stadionId,
-          groupId: group.id,
-        },
-        {
-          price,
-          startTime: dayjs(startTime).add(2, "week").toDate(),
-          endTime: dayjs(endTime).add(2, "week").toDate(),
-          maxPlayersCount,
-          stadionId,
-          groupId: group.id,
-        },
-        {
-          price,
-          startTime: dayjs(startTime).add(3, "week").toDate(),
-          endTime: dayjs(endTime).add(3, "week").toDate(),
-          maxPlayersCount,
-          stadionId,
-          groupId: group.id,
-        },
-      ]);
-    } else {
-      return res.status(400).send({ success: false, message: "Missing range" });
-    }
+    const game = await Game.create({
+      price,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      groupId: group.id,
+    });
 
-    return res.send(data);
+    return res.send(game);
   } catch (error) {
     next(error);
   }
@@ -103,7 +67,8 @@ const organizerCreate = async (
     }
     const { id: userId } = req.user;
     const { language } = req.query;
-    const { groupId, price, startTime, endTime, stadionId, range } = req.body;
+    const { groupId, price, startTime, endTime, stadionId, range, uniforms } =
+      req.body;
 
     let game: Game | undefined;
     let games: Game[] | undefined;
@@ -117,6 +82,10 @@ const organizerCreate = async (
         isPublic: false,
         groupId,
         creatorId: userId,
+      });
+      GameUniforms.create({
+        gameId: game.id,
+        indexes: uniforms,
       });
       UserGame.create({
         userId,
@@ -171,6 +140,10 @@ const organizerCreate = async (
           userId,
           gameId: +game.id,
           uniforms: [],
+        });
+        GameUniforms.create({
+          gameId: game.id,
+          indexes: uniforms,
         });
       });
     } else {
@@ -334,25 +307,36 @@ const changeWillPlayGameStatus = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { id, status, prevStatus } = req.body;
+    const { id, status, prevStatus, uniforms } = req.body;
 
     if (status) {
       Game.increment("playersCount", { by: 1, where: { id } });
+      UserGame.update(
+        {
+          willPlay: status,
+          uniforms,
+        },
+        {
+          where: {
+            gameId: id,
+            userId,
+          },
+        }
+      );
     } else if (status === null && prevStatus) {
       Game.decrement("playersCount", { by: 1, where: { id } });
-    }
-
-    UserGame.update(
-      {
-        willPlay: status,
-      },
-      {
-        where: {
-          gameId: id,
-          userId,
+      UserGame.update(
+        {
+          willPlay: status,
         },
-      }
-    );
+        {
+          where: {
+            gameId: id,
+            userId,
+          },
+        }
+      );
+    }
 
     return res.send({ success: true });
   } catch (error) {
@@ -372,7 +356,7 @@ const acceptInvitation = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { id, groupId } = req.body;
+    const { id, groupId, gameId } = req.body;
 
     const invitation = await Invitation.findOne({
       where: {
@@ -387,32 +371,43 @@ const acceptInvitation = async (
         .json({ success: false, message: "Invitation not found" });
     }
 
-    const games = await Game.findAll({
-      where: {
-        groupId: invitation?.groupId,
-      },
-    });
-
-    if (!games) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Game not found" });
-    }
-
-    for (const game of games) {
+    if (invitation.isGame && !invitation.isGroup) {
       const userGame = await UserGame.findOne({
         where: {
           userId,
-          gameId: game.id,
+          gameId: gameId,
+        },
+      });
+      if (!userGame) {
+        await UserGame.create({
+          userId,
+          gameId: gameId,
+          uniforms: [],
+          willPlay: true,
+        });
+      }
+    } else {
+      const games = await Game.findAll({
+        where: {
+          groupId: invitation?.groupId,
         },
       });
 
-      if (!userGame) {
-        UserGame.create({
-          userId,
-          gameId: game.id,
-          uniforms: [],
+      for (const game of games) {
+        const userGame = await UserGame.findOne({
+          where: {
+            userId,
+            gameId: game.id,
+          },
         });
+
+        if (!userGame) {
+          await UserGame.create({
+            userId,
+            gameId: game.id,
+            uniforms: [],
+          });
+        }
       }
     }
 
@@ -430,6 +425,15 @@ const acceptInvitation = async (
       return res
         .status(404)
         .json({ success: false, message: "Group not found" });
+    }
+
+    if (invitation.isGame && !group.forPublic) {
+      await UserGroup.create({
+        groupId: group.id,
+        onlyOneGame: true,
+        userId,
+      });
+      return res.send({ success: true });
     }
 
     await UserGroup.create({
@@ -715,8 +719,20 @@ const getOne = async (
         });
       });
 
-      return res.send({ ...game.toJSON(), uniforms });
+      type AccType = { usersWillPlayCount: number; usersWontPlayCount: number };
+      const usersStatistics: AccType = userGames.reduce(
+        (acc: AccType, game: UserGame) => {
+          if (game.willPlay) {
+            acc.usersWillPlayCount++;
+          } else if (game.willPlay === false) acc.usersWontPlayCount++;
+          return acc;
+        },
+        { usersWillPlayCount: 0, usersWontPlayCount: 0 }
+      );
+
+      return res.send({ ...game.toJSON(), uniforms, ...usersStatistics });
     }
+
     const group = await Group.findByPk(game.groupId, {
       include: {
         model: User,
@@ -748,10 +764,18 @@ const getOne = async (
         { usersWillPlayCount: 0, usersWontPlayCount: 0 }
       );
 
+    const users = (group?.toJSON() as Group & { Users: User[] }).Users.map(
+      (user) => ({
+        ...user,
+        //@ts-ignore
+        UserGame: user.games[0].UserGame,
+      })
+    );
+
     return res.send({
       ...game.toJSON(),
-      users: (group?.toJSON() as Group & { Users: User[] }).Users,
       ...usersStatistics,
+      users,
     });
   } catch (error) {
     next(error);
@@ -884,7 +908,7 @@ const register = async (
   }
 };
 
-const getUpcomingGames = async (
+const getMyGames = async (
   req: RequestWithUser,
   res: Response,
   next: NextFunction
@@ -896,12 +920,11 @@ const getUpcomingGames = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { language } = req.query;
+    const { language, date } = req.query;
 
     const userGames = await UserGame.findAll({
       where: {
         userId,
-        willPlay: true,
       },
     });
 
@@ -917,35 +940,127 @@ const getUpcomingGames = async (
 
     const gameIds = userGames.map((userGame) => userGame.gameId);
 
-    const games = await Game.findAll({
-      where: {
-        id: gameIds,
-        startTime: {
-          [Op.gt]: new Date(),
-        },
-      },
-      include: [
-        {
-          model: User,
-          as: "users",
-          where: {
-            id: userId,
+    let games;
+    if (date) {
+      const startDate = new Date(date as string);
+      startDate.setHours(startDate.getHours() - 4);
+      const endDate = new Date(date as string);
+      endDate.setHours(endDate.getHours() - 4);
+      endDate.setDate(endDate.getDate() + 1);
+      games = await Game.findAll({
+        where: {
+          id: gameIds,
+          startTime: {
+            [Op.between]: [startDate, endDate],
           },
         },
-        {
-          model: Stadion,
-          as: "stadion",
-          attributes: [
-            [`title_${language}`, `title`],
-            [`address_${language}`, `address`],
-            "img",
-          ],
+        include: [
+          {
+            model: Stadion,
+            as: "stadion",
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              "img",
+            ],
+          },
+        ],
+        order: [["startTime", "ASC"]],
+      });
+    } else {
+      games = await Game.findAll({
+        where: {
+          id: gameIds,
+          startTime: {
+            [Op.gt]: new Date(),
+          },
         },
-      ],
-      order: [["startTime", "ASC"]],
-    });
+        include: [
+          {
+            model: Stadion,
+            as: "stadion",
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              "img",
+            ],
+          },
+        ],
+        order: [["startTime", "ASC"]],
+      });
+    }
 
-    res.send(games);
+    return res.send(games);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOpenGames = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { language, date } = req.query;
+
+    let games;
+
+    if (date) {
+      const startDate = new Date(date as string);
+      startDate.setHours(startDate.getHours() - 4);
+      const endDate = new Date(date as string);
+      endDate.setHours(endDate.getHours() - 4);
+      endDate.setDate(endDate.getDate() + 1);
+      games = await Game.findAll({
+        where: {
+          isPublic: true,
+          startTime: {
+            [Op.between]: [startDate, endDate],
+          },
+        },
+        include: [
+          {
+            model: Stadion,
+            as: "stadion",
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              "img",
+            ],
+          },
+        ],
+        order: [["startTime", "ASC"]],
+      });
+    } else {
+      games = await Game.findAll({
+        where: {
+          isPublic: true,
+          startTime: {
+            [Op.gt]: new Date(),
+          },
+        },
+        include: [
+          {
+            model: Stadion,
+            as: "stadion",
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+              "img",
+            ],
+          },
+        ],
+        order: [["startTime", "ASC"]],
+      });
+    }
+
+    return res.send(games);
   } catch (error) {
     next(error);
   }
@@ -1063,12 +1178,13 @@ const cancel = async (
 
     game?.decrement("playersCount", { by: 1 });
 
-    // UserGroup.destroy({
-    //   where: {
-    //     userId,
-    //     groupId: (game.dataValues as Game & { group: Group }).group.dataValues.id,
-    //   },
-    // });
+    UserGroup.destroy({
+      where: {
+        userId,
+        groupId: (game.dataValues as Game & { group: Group }).group.dataValues
+          .id,
+      },
+    });
 
     return res.send({ success: true });
   } catch (error) {
@@ -1129,7 +1245,8 @@ export default {
   remove,
   update,
   register,
-  getUpcomingGames,
+  getMyGames,
+  getOpenGames,
   getActivity,
   getAllGroupGames,
   cancel,

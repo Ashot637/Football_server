@@ -6,7 +6,9 @@ interface InvitationAttributes {
   ip: string;
   from: string;
   groupId: number;
+  gameId: number;
   isGroup: boolean;
+  isGame: boolean;
 }
 
 interface InvitationCreationAttributes
@@ -20,7 +22,9 @@ class Invitation
   public ip!: string;
   public from!: string;
   public groupId!: number;
+  public gameId!: number;
   public isGroup!: boolean;
+  public isGame!: boolean;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -32,7 +36,9 @@ Invitation.init(
     ip: { type: DataTypes.STRING, allowNull: false },
     from: { type: DataTypes.STRING, allowNull: false },
     groupId: { type: DataTypes.INTEGER, allowNull: false },
+    gameId: { type: DataTypes.INTEGER, allowNull: true },
     isGroup: { type: DataTypes.BOOLEAN, defaultValue: false },
+    isGame: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
   {
     sequelize,

@@ -1,14 +1,29 @@
-import type { NextFunction, Response } from 'express';
-import { type RequestWithUser } from '../types/RequestWithUser';
-import { Game, Group, Message, MessageLikes, Stadion, User, UserGame, UserGroup } from '../models';
-import { groupsSocket, userSockets } from '../sockets/userSockets';
-import sequelize from 'sequelize';
-import { CourierClient } from '@trycourier/courier';
+import type { NextFunction, Response } from "express";
+import { type RequestWithUser } from "../types/RequestWithUser";
+import {
+  Game,
+  Group,
+  Message,
+  MessageLikes,
+  Stadion,
+  User,
+  UserGame,
+  UserGroup,
+} from "../models";
+import { groupsSocket, userSockets } from "../sockets/userSockets";
+import sequelize from "sequelize";
+import { CourierClient } from "@trycourier/courier";
 
-const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getAllGroups = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { language } = req.query;
@@ -29,6 +44,7 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
+        onlyOneGame: false,
       },
     });
 
@@ -41,31 +57,31 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
       include: [
         {
           model: Game,
-          as: 'game',
+          as: "game",
           include: [
             {
               model: Stadion,
-              as: 'stadion',
+              as: "stadion",
               attributes: [
                 [`title_${language}`, `title`],
                 [`address_${language}`, `address`],
-                'title_en',
+                "title_en",
               ],
             },
           ],
         },
       ],
       attributes: [
-        'id',
-        'lastMessageTimestamp',
+        "id",
+        "lastMessageTimestamp",
         [
           sequelize.literal(`(
             SELECT "lastSeenMessageTime" FROM "UserGroups" WHERE "userId" =  ${userId} AND "groupId" = "Group"."id"
         )`),
-          'lastSeenMessageTime',
+          "lastSeenMessageTime",
         ],
       ],
-      order: [['lastMessageTimestamp', 'DESC']],
+      order: [["lastMessageTimestamp", "DESC"]],
     });
 
     const groupsWithNewMessages = groups.map((group) => ({
@@ -73,8 +89,8 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
       game: (group as unknown as { game: Game[] }).game[0],
       isNewMessage:
         group.dataValues.lastMessageTimestamp! >
-        (group as Group & { dataValues: { lastSeenMessageTime: Date } }).dataValues
-          .lastSeenMessageTime,
+        (group as Group & { dataValues: { lastSeenMessageTime: Date } })
+          .dataValues.lastSeenMessageTime,
     }));
 
     return res.send(groupsWithNewMessages);
@@ -83,10 +99,16 @@ const getAllGroups = async (req: RequestWithUser, res: Response, next: NextFunct
   }
 };
 
-const getGroupMessages = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const getGroupMessages = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { groupId } = req.query;
@@ -96,12 +118,15 @@ const getGroupMessages = async (req: RequestWithUser, res: Response, next: NextF
     const offset = (currentPage - 1) * +limit!;
 
     if (!groupId) {
-      return res.status(404).send({ success: false, messages: 'Group not found' });
+      return res
+        .status(404)
+        .send({ success: false, messages: "Group not found" });
     }
 
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
+        onlyOneGame: false,
       },
     });
 
@@ -114,27 +139,29 @@ const getGroupMessages = async (req: RequestWithUser, res: Response, next: NextF
     });
 
     if (!groups.find((group) => group.id === +groupId)) {
-      return res.status(403).json({ success: false, message: 'User dont contain in group' });
+      return res
+        .status(403)
+        .json({ success: false, message: "User dont contain in group" });
     }
 
     const messages = await Message.findAll({
       where: { groupId: +groupId },
       limit: +limit!,
       offset,
-      attributes: ['id', 'userId', 'text', 'createdAt'],
+      attributes: ["id", "userId", "text", "createdAt"],
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['name', 'img'],
+          as: "user",
+          attributes: ["name", "img"],
         },
         {
           model: User,
-          as: 'likedUsers',
-          attributes: ['id', 'name', 'img'],
+          as: "likedUsers",
+          attributes: ["id", "name", "img"],
         },
       ],
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     return res.send(messages);
@@ -143,10 +170,16 @@ const getGroupMessages = async (req: RequestWithUser, res: Response, next: NextF
   }
 };
 
-const send = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const send = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { text, groupId, id, userName, groupTitle, expoPushToken } = req.body;
@@ -154,6 +187,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
+        onlyOneGame: false,
       },
     });
 
@@ -166,13 +200,16 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     });
 
     if (!groups.find((group) => group.id === groupId)) {
-      return res
-        .status(403)
-        .json({ success: false, message: "User doesn't belong to the specified group" });
+      return res.status(403).json({
+        success: false,
+        message: "User doesn't belong to the specified group",
+      });
     }
 
     const GroupWithUsers: any = await Group.findByPk(+groupId, {
-      include: [{ model: Game, as: 'game', include: [{ model: User, as: 'users' }] }],
+      include: [
+        { model: Game, as: "game", include: [{ model: User, as: "users" }] },
+      ],
     });
     //  as Group & { dataValues: { game: Game[] & { dataValues: { users: User[] } } } };
 
@@ -188,19 +225,20 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     oflineUsers.forEach((id) => {
       const userSocket = userSockets.get(id);
       if (userSocket) {
-        userSocket.emit('user-new-message');
-        userSocket.emit('group-new-message', groupId);
+        userSocket.emit("user-new-message");
+        userSocket.emit("group-new-message", groupId);
       }
     });
 
     const usersToSend = users.reduce((acc: string[], user: User) => {
-      if (user.expoPushToken === expoPushToken || !user.expoPushToken) return acc;
+      if (user.expoPushToken === expoPushToken || !user.expoPushToken)
+        return acc;
       acc.push(user.expoPushToken);
       return acc;
     }, [] as string[]);
 
     const courier = new CourierClient({
-      authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
+      authorizationToken: "pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK",
     });
 
     await courier.send({
@@ -211,7 +249,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
             tokens: usersToSend,
           },
         },
-        template: '992NM6VJF7MNVAHDCV54CHZQSEZH',
+        template: "992NM6VJF7MNVAHDCV54CHZQSEZH",
         data: {
           groupTitle,
           userName,
@@ -241,7 +279,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       },
     };
 
-    userSocket.broadcast.to(groupId).emit('new-message', messageData);
+    userSocket.broadcast.to(groupId).emit("new-message", messageData);
 
     Group.update(
       {
@@ -249,10 +287,13 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       },
       {
         where: { id: groupId },
-      },
+      }
     );
 
-    UserGroup.update({ lastSeenMessageTime: new Date() }, { where: { userId, groupId: +groupId } });
+    UserGroup.update(
+      { lastSeenMessageTime: new Date() },
+      { where: { userId, groupId: +groupId } }
+    );
 
     return res.send(messageData);
   } catch (error) {
@@ -260,26 +301,41 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
   }
 };
 
-const readGroupMessages = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const readGroupMessages = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { groupId } = req.body;
-    UserGroup.update({ lastSeenMessageTime: new Date() }, { where: { userId, groupId: +groupId } });
+    UserGroup.update(
+      { lastSeenMessageTime: new Date() },
+      { where: { userId, groupId: +groupId } }
+    );
     const userSocket = userSockets.get(userId);
-    userSocket.broadcast.to(groupId).emit('read-message-in-group', groupId);
+    userSocket.broadcast.to(groupId).emit("read-message-in-group", groupId);
     return res.send({ success: true });
   } catch (error) {
     next(error);
   }
 };
 
-const deleteMessage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const deleteMessage = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
     const { messageId, groupId } = req.body;
@@ -293,7 +349,7 @@ const deleteMessage = async (req: RequestWithUser, res: Response, next: NextFunc
 
     const userSocket = userSockets.get(userId);
 
-    userSocket.broadcast.to(groupId).emit('delete-message', messageId);
+    userSocket.broadcast.to(groupId).emit("delete-message", messageId);
 
     return res.send({ success: true });
   } catch (error) {
@@ -301,16 +357,23 @@ const deleteMessage = async (req: RequestWithUser, res: Response, next: NextFunc
   }
 };
 
-const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const onReactToMessage = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { messageId, groupId, messageOwnerId, groupTitle, userName } = req.body;
+    const { messageId, groupId, messageOwnerId, groupTitle, userName } =
+      req.body;
 
     const user = await User.findByPk(userId, {
-      attributes: ['id', 'name', 'img'],
+      attributes: ["id", "name", "img"],
     });
 
     const existingReaction = await MessageLikes.findOne({
@@ -326,7 +389,7 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
       if (messageOwnerId !== userId) {
         const user = await User.findByPk(messageOwnerId);
         const courier = new CourierClient({
-          authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
+          authorizationToken: "pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK",
         });
         await courier.send({
           message: {
@@ -336,11 +399,11 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
                 token: user?.expoPushToken,
               },
             },
-            template: '992NM6VJF7MNVAHDCV54CHZQSEZH',
+            template: "992NM6VJF7MNVAHDCV54CHZQSEZH",
             data: {
               groupTitle,
               userName,
-              text: 'Liked your message',
+              text: "Liked your message",
             },
           },
         });
@@ -349,15 +412,17 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
           User.update({ hasMessage: true }, { where: { id: messageOwnerId } });
           const userSocket = userSockets.get(messageOwnerId);
           if (userSocket) {
-            userSocket.emit('user-new-message');
-            userSocket.emit('group-new-message', groupId);
+            userSocket.emit("user-new-message");
+            userSocket.emit("group-new-message", groupId);
           }
         }
       }
     }
 
     const userSocket = userSockets.get(userId);
-    userSocket.broadcast.to(groupId).emit('react-to-message', { messageId, user });
+    userSocket.broadcast
+      .to(groupId)
+      .emit("react-to-message", { messageId, user });
 
     return res.send({ success: true });
   } catch (error) {
@@ -365,10 +430,16 @@ const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextF
   }
 };
 
-const markUserMessagesRead = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const markUserMessagesRead = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.user;
 

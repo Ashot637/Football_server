@@ -1,14 +1,16 @@
-import { Model, Optional, DataTypes } from 'sequelize';
-import sequelize from '../db';
+import { Model, Optional, DataTypes } from "sequelize";
+import sequelize from "../db";
 
 interface UserGroupAttributes {
   id: number;
   userId: number;
   groupId: number;
+  onlyOneGame?: boolean;
   lastSeenMessageTime?: Date;
 }
 
-interface UserGroupCreationAttributes extends Optional<UserGroupAttributes, 'id'> {}
+interface UserGroupCreationAttributes
+  extends Optional<UserGroupAttributes, "id"> {}
 
 class UserGroup
   extends Model<UserGroupAttributes, UserGroupCreationAttributes>
@@ -17,6 +19,7 @@ class UserGroup
   public id!: number;
   public userId!: number;
   public groupId!: number;
+  public onlyOneGame?: boolean;
   public lastSeenMessageTime?: Date;
 
   public readonly createdAt!: Date;
@@ -26,14 +29,15 @@ class UserGroup
 UserGroup.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: { type: DataTypes.INTEGER, allowNull: false, field: 'userId' },
-    groupId: { type: DataTypes.INTEGER, allowNull: false, field: 'groupId' },
+    userId: { type: DataTypes.INTEGER, allowNull: false, field: "userId" },
+    groupId: { type: DataTypes.INTEGER, allowNull: false, field: "groupId" },
+    onlyOneGame: { type: DataTypes.BOOLEAN, defaultValue: false },
     lastSeenMessageTime: { type: DataTypes.DATE, allowNull: true },
   },
   {
     sequelize,
-    modelName: 'UserGroup',
-  },
+    modelName: "UserGroup",
+  }
 );
 
 export default UserGroup;

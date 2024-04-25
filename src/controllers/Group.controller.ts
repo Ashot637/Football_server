@@ -22,8 +22,9 @@ const getAll = async (
         model: Group,
       },
     });
+
     //@ts-ignore
-    return res.send(user.Groups);
+    return res.send(user.Groups?.filter((group) => !group.forPublic) ?? []);
   } catch (error) {
     next(error);
   }
@@ -46,6 +47,7 @@ const getOne = async (
     const group = await Group.findOne({
       where: {
         id,
+        forPublic: false,
       },
       include: [
         {
@@ -106,7 +108,7 @@ const create = async (
   }
 };
 
-const leaveFromGrop = async (
+const leaveFromGroup = async (
   req: RequestWithUser,
   res: Response,
   next: NextFunction
@@ -171,5 +173,5 @@ export default {
   getAll,
   getOne,
   create,
-  leaveFromGrop,
+  leaveFromGroup,
 };

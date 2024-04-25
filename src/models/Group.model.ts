@@ -5,6 +5,7 @@ interface GroupAttributes {
   id: number;
   title: string;
   ownerId: number;
+  forPublic?: boolean;
   lastMessageTimestamp?: Date;
 }
 
@@ -17,6 +18,7 @@ class Group
   public id!: number;
   public title!: string;
   public ownerId!: number;
+  public forPublic?: boolean;
   public lastMessageTimestamp?: Date;
 
   public readonly createdAt!: Date;
@@ -28,6 +30,7 @@ Group.init(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     title: { type: DataTypes.STRING, allowNull: false },
     ownerId: { type: DataTypes.INTEGER, allowNull: false },
+    forPublic: { type: DataTypes.BOOLEAN, defaultValue: false },
     lastMessageTimestamp: { type: DataTypes.DATE, allowNull: true },
   },
   {

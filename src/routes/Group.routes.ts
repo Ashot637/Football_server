@@ -11,7 +11,7 @@ router.post("/group/create", checkRole(ROLES.USER), GroupController.create);
 router.delete(
   "/group/leave/:id",
   checkRole(ROLES.USER),
-  GroupController.leaveFromGrop
+  GroupController.leaveFromGroup
 );
 
 export default router;

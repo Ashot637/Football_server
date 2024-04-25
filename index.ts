@@ -62,7 +62,9 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
       where: {
         ip: ipAddress,
         groupId: decoded.groupId,
+        gameId: decoded.gameId,
         isGroup: !!decoded.isGroup,
+        isGame: !!decoded.isGame,
       },
     });
 
@@ -71,7 +73,9 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
         ip: ipAddress,
         groupId: decoded.groupId,
         from: decoded.from || "",
+        gameId: decoded.gameId,
         isGroup: !!decoded.isGroup,
+        isGame: !!decoded.isGame,
       });
     }
 

@@ -470,7 +470,6 @@ const authMe = async (
       }) as unknown as Invitation[];
     }
 
-
     res.send({ ...user.dataValues, accessToken, invitations });
   } catch (error) {
     next(error);

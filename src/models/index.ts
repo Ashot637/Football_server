@@ -40,8 +40,8 @@ Facilitie.belongsToMany(Stadion, {
 Game.hasMany(Invitation, { as: "invitations", foreignKey: "gameId" });
 Invitation.belongsTo(Game, { as: "game", foreignKey: "gameId" });
 
-Game.hasOne(GameUniforms, { foreignKey: "gameId" });
-GameUniforms.belongsTo(Game, { as: "uniforms", foreignKey: "gameId" });
+Game.hasOne(GameUniforms, { as: "unfiroms", foreignKey: "gameId" });
+GameUniforms.belongsTo(Game, { foreignKey: "gameId" });
 
 Game.hasMany(StadionNotification, { foreignKey: "gameId" });
 StadionNotification.belongsTo(Game, { as: "game", foreignKey: "gameId" });

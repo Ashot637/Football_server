@@ -1,14 +1,18 @@
 import { Model, Optional, DataTypes } from "sequelize";
 import sequelize from "../db";
 
+export enum INVITATION_TYPES {
+  GAME = "GAME",
+  GROUP = "GROUP",
+  PRIVATE_GAME = "PRIVATE_GAME",
+}
 interface InvitationAttributes {
   id: number;
   ip: string;
   from: string;
   groupId: number;
   gameId: number;
-  isGroup: boolean;
-  isGame: boolean;
+  type: INVITATION_TYPES;
 }
 
 interface InvitationCreationAttributes
@@ -23,8 +27,7 @@ class Invitation
   public from!: string;
   public groupId!: number;
   public gameId!: number;
-  public isGroup!: boolean;
-  public isGame!: boolean;
+  public type!: INVITATION_TYPES;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -37,8 +40,7 @@ Invitation.init(
     from: { type: DataTypes.STRING, allowNull: false },
     groupId: { type: DataTypes.INTEGER, allowNull: false },
     gameId: { type: DataTypes.INTEGER, allowNull: true },
-    isGroup: { type: DataTypes.BOOLEAN, defaultValue: false },
-    isGame: { type: DataTypes.BOOLEAN, defaultValue: false },
+    type: { type: DataTypes.STRING, allowNull: false },
   },
   {
     sequelize,

@@ -73,7 +73,15 @@ router.get(
   GameController.getAllFromAdminPanel
 );
 router.post("/game/create", GameController.create);
-router.delete("/game/delete", checkRole(ROLES.ADMIN), GameController.remove);
-router.patch("/game/update/:id", checkRole(ROLES.ADMIN), GameController.update);
+router.delete(
+  "/game/delete",
+  checkRole(ROLES.USER, ROLES.STADION_OWNER, ROLES.ADMIN),
+  GameController.remove
+);
+router.patch(
+  "/game/update/:id",
+  checkRole(ROLES.USER, ROLES.STADION_OWNER, ROLES.ADMIN),
+  GameController.update
+);
 
 export default router;

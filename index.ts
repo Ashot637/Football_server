@@ -63,8 +63,7 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
         ip: ipAddress,
         groupId: decoded.groupId,
         gameId: decoded.gameId,
-        isGroup: !!decoded.isGroup,
-        isGame: !!decoded.isGame,
+        type: decoded.type,
       },
     });
 
@@ -72,10 +71,9 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
       Invitation.create({
         ip: ipAddress,
         groupId: decoded.groupId,
-        from: decoded.from || "",
+        from: decoded.from ?? "",
         gameId: decoded.gameId,
-        isGroup: !!decoded.isGroup,
-        isGame: !!decoded.isGame,
+        type: decoded.type,
       });
     }
 

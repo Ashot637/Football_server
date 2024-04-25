@@ -15,6 +15,7 @@ import { Op, type WhereOptions } from "sequelize";
 import dayjs from "dayjs";
 import { ROLES } from "../types/Roles";
 import StadionNotification from "../models/StadionNotification.model";
+import { INVITATION_TYPES } from "../models/Invitation.model";
 
 interface CreateRequest {
   price: number;
@@ -23,6 +24,7 @@ interface CreateRequest {
   maxPlayersCount: number;
   stadionId: number;
   range: 1 | 4;
+  uniforms: number[];
 }
 
 const create = async (
@@ -31,7 +33,8 @@ const create = async (
   next: NextFunction
 ) => {
   try {
-    const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
+    const { price, startTime, endTime, maxPlayersCount, stadionId, uniforms } =
+      req.body;
 
     const group = await Group.create({
       ownerId: -1,
@@ -46,6 +49,11 @@ const create = async (
       maxPlayersCount,
       stadionId,
       groupId: group.id,
+    });
+
+    await GameUniforms.create({
+      gameId: game.id,
+      indexes: uniforms,
     });
 
     return res.send(game);
@@ -83,14 +91,13 @@ const organizerCreate = async (
         groupId,
         creatorId: userId,
       });
-      GameUniforms.create({
+      await GameUniforms.create({
         gameId: game.id,
         indexes: uniforms,
       });
-      UserGame.create({
+      await UserGame.create({
         userId,
         gameId: +game.id,
-        uniforms: [],
       });
     } else if (range === 4) {
       games = await Game.bulkCreate([
@@ -139,7 +146,6 @@ const organizerCreate = async (
         UserGame.create({
           userId,
           gameId: +game.id,
-          uniforms: [],
         });
         GameUniforms.create({
           gameId: game.id,
@@ -159,7 +165,7 @@ const organizerCreate = async (
     });
 
     if (game) {
-      StadionNotification.create({
+      await StadionNotification.create({
         userId,
         gameId: game.id,
         stadionId,
@@ -307,14 +313,13 @@ const changeWillPlayGameStatus = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { id, status, prevStatus, uniforms } = req.body;
+    const { id, status, prevStatus } = req.body;
 
     if (status) {
       Game.increment("playersCount", { by: 1, where: { id } });
       UserGame.update(
         {
           willPlay: status,
-          uniforms,
         },
         {
           where: {
@@ -356,12 +361,11 @@ const acceptInvitation = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId } = req.user;
-    const { id, groupId, gameId } = req.body;
+    const { id } = req.body;
 
     const invitation = await Invitation.findOne({
       where: {
         id,
-        groupId,
       },
     });
 
@@ -371,25 +375,10 @@ const acceptInvitation = async (
         .json({ success: false, message: "Invitation not found" });
     }
 
-    if (invitation.isGame && !invitation.isGroup) {
-      const userGame = await UserGame.findOne({
-        where: {
-          userId,
-          gameId: gameId,
-        },
-      });
-      if (!userGame) {
-        await UserGame.create({
-          userId,
-          gameId: gameId,
-          uniforms: [],
-          willPlay: true,
-        });
-      }
-    } else {
+    if (invitation.type === INVITATION_TYPES.GROUP) {
       const games = await Game.findAll({
         where: {
-          groupId: invitation?.groupId,
+          groupId: invitation.groupId,
         },
       });
 
@@ -405,9 +394,22 @@ const acceptInvitation = async (
           await UserGame.create({
             userId,
             gameId: game.id,
-            uniforms: [],
           });
         }
+      }
+    } else {
+      const userGame = await UserGame.findOne({
+        where: {
+          userId,
+          gameId: invitation.gameId,
+        },
+      });
+      if (!userGame) {
+        await UserGame.create({
+          userId,
+          gameId: invitation.gameId,
+          willPlay: true,
+        });
       }
     }
 
@@ -427,12 +429,12 @@ const acceptInvitation = async (
         .json({ success: false, message: "Group not found" });
     }
 
-    if (invitation.isGame && !group.forPublic) {
-      await UserGroup.create({
-        groupId: group.id,
-        onlyOneGame: true,
-        userId,
-      });
+    if (invitation.type === INVITATION_TYPES.PRIVATE_GAME) {
+      // await UserGroup.create({
+      //   groupId: group.id,
+      //   onlyOneGame: true,
+      //   userId,
+      // });
       return res.send({ success: true });
     }
 
@@ -686,7 +688,23 @@ const getOne = async (
               },
             ],
           },
-          { model: User, as: "users" },
+          {
+            model: User,
+            as: "users",
+            include: [
+              {
+                model: Game,
+                as: "games",
+                where: {
+                  id,
+                },
+              },
+            ],
+          },
+          {
+            model: GameUniforms,
+            as: "unfiroms",
+          },
         ],
       });
     } else {
@@ -698,6 +716,10 @@ const getOne = async (
             include: [{ model: Facilitie, as: "facilities" }],
           },
           { model: User, as: "users" },
+          {
+            model: GameUniforms,
+            as: "unfiroms",
+          },
         ],
       });
     }
@@ -711,13 +733,13 @@ const getOne = async (
     if (game.isPublic) {
       const userGames = await UserGame.findAll({ where: { gameId: id } });
 
-      let uniforms = [0, 0, 0, 0];
+      // let uniforms = [0, 0, 0, 0];
 
-      userGames.forEach((userGame) => {
-        userGame.uniforms.forEach((index) => {
-          uniforms[index] = ++uniforms[index];
-        });
-      });
+      // userGames.forEach((userGame) => {
+      //   userGame.uniforms.forEach((index) => {
+      //     uniforms[index] = ++uniforms[index];
+      //   });
+      // });
 
       type AccType = { usersWillPlayCount: number; usersWontPlayCount: number };
       const usersStatistics: AccType = userGames.reduce(
@@ -730,28 +752,28 @@ const getOne = async (
         { usersWillPlayCount: 0, usersWontPlayCount: 0 }
       );
 
-      return res.send({ ...game.toJSON(), uniforms, ...usersStatistics });
+      return res.send({ ...game.toJSON(), ...usersStatistics });
     }
 
-    const group = await Group.findByPk(game.groupId, {
-      include: {
-        model: User,
-        include: [
-          {
-            model: Game,
-            as: "games",
-            where: {
-              id: game.id,
-            },
-          },
-        ],
-      },
-    });
+    // const group = await Group.findByPk(game.groupId, {
+    //   include: {
+    //     model: User,
+    //     include: [
+    //       {
+    //         model: Game,
+    //         as: "games",
+    //         where: {
+    //           id: game.id,
+    //         },
+    //       },
+    //     ],
+    //   },
+    // });
 
     type AccType = { usersWillPlayCount: number; usersWontPlayCount: number };
     const usersStatistics: AccType =
       //@ts-ignore
-      group.Users.reduce(
+      game.users.reduce(
         (acc: AccType, user: User) => {
           //@ts-ignore
           if (user.games[0].UserGame.willPlay) {
@@ -764,7 +786,7 @@ const getOne = async (
         { usersWillPlayCount: 0, usersWontPlayCount: 0 }
       );
 
-    const users = (group?.toJSON() as Group & { Users: User[] }).Users.map(
+    const users = (game.toJSON() as Game & { users: User[] }).users.map(
       (user) => ({
         ...user,
         //@ts-ignore
@@ -782,25 +804,54 @@ const getOne = async (
   }
 };
 
-interface RemoveRequest {
-  ids: number[];
-}
-
 const remove = async (
-  req: Request<{}, {}, RemoveRequest>,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id: userId, role } = req.user;
     const { ids } = req.body;
 
-    await Game.destroy({
-      where: {
-        id: {
-          [Op.in]: ids,
+    if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
+      await Game.destroy({
+        where: {
+          id: ids,
         },
-      },
-    });
+      });
+      await UserGame.destroy({
+        where: {
+          gameId: ids,
+        },
+      });
+      await UserGame.destroy({});
+    } else {
+      const games = await Game.findAll({
+        where: {
+          id: ids,
+          creatorId: userId,
+        },
+      });
+      await Game.destroy({
+        where: {
+          id: ids,
+          creatorId: userId,
+        },
+      });
+
+      for (const game of games) {
+        await UserGame.destroy({
+          where: {
+            gameId: game.id,
+          },
+        });
+      }
+    }
 
     return res.send({ success: true });
   } catch (error) {
@@ -809,35 +860,85 @@ const remove = async (
 };
 
 const update = async (
-  req: Request<{ id: string }, {}, CreateRequest>,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { price, startTime, endTime, maxPlayersCount, stadionId } = req.body;
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id: userId, role } = req.user;
+    const { price, startTime, endTime, maxPlayersCount, stadionId, uniforms } =
+      req.body;
     const { id } = req.params;
 
-    const [rowsUpdated, [updatedGame]] = await Game.update(
-      {
-        price,
-        startTime,
-        endTime,
-        maxPlayersCount,
-        stadionId,
-      },
-      {
-        where: {
-          id: id,
-        },
-        returning: true,
-      }
-    );
+    let result: [number, Game[]];
 
-    if (rowsUpdated === 0) {
+    if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
+      result = await Game.update(
+        {
+          price,
+          startTime,
+          endTime,
+          maxPlayersCount,
+          stadionId,
+        },
+        {
+          where: {
+            id: id,
+          },
+          returning: true,
+        }
+      );
+      GameUniforms.update(
+        {
+          indexes: uniforms,
+        },
+        {
+          where: {
+            gameId: id,
+          },
+        }
+      );
+    } else {
+      result = await Game.update(
+        {
+          price,
+          startTime,
+          endTime,
+          maxPlayersCount,
+          stadionId,
+        },
+        {
+          where: {
+            id: id,
+            creatorId: userId,
+          },
+          returning: true,
+        }
+      );
+      if (result?.[1]?.[0]) {
+        GameUniforms.update(
+          {
+            indexes: uniforms,
+          },
+          {
+            where: {
+              gameId: result[1][0].id,
+            },
+          }
+        );
+      }
+    }
+
+    if (result[0] === 0) {
       return res.status(404).json({ message: "Game not found" });
     }
 
-    res.json(updatedGame);
+    return res.json(result[1]);
   } catch (error) {
     next(error);
   }
@@ -856,7 +957,6 @@ const register = async (
     }
     const { id: userId } = req.user;
     const { gameId } = req.params;
-    const { uniforms } = req.body;
 
     const game = await Game.findByPk(gameId, {
       include: [
@@ -883,7 +983,6 @@ const register = async (
       userId,
       gameId: +gameId,
       willPlay: true,
-      uniforms: uniforms || [],
     });
 
     const userGroup = await UserGroup.findOne({

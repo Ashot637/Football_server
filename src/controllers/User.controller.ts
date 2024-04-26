@@ -719,7 +719,12 @@ const getAllNotifications = async (
     }
     const { id } = req.user;
 
-    const notifications = await Notification.findAll();
+    const notifications = await Notification.findAll({
+      include: {
+        model: Game,
+        as: "game",
+      },
+    });
     Notification.update(
       {
         isNew: true,

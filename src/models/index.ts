@@ -59,8 +59,11 @@ StadionNotification.belongsTo(Stadion, {
 // User.hasMany(Invitation, { as: 'invitations', foreignKey: 'ip', sourceKey: 'ip' });
 // Invitation.belongsTo(User, { as: 'user', foreignKey: 'ip', targetKey: 'ip' });
 
-User.hasMany(Notification, { as: "notifications", foreignKey: "gameId" });
-Notification.belongsTo(User, { foreignKey: "gameId" });
+User.hasMany(Notification, { as: "notifications", foreignKey: "userId" });
+Notification.belongsTo(User, { foreignKey: "userId" });
+
+Notification.hasOne(Game, { as: "game", foreignKey: "gameId" });
+Game.belongsTo(Notification, { foreignKey: "gameId" });
 
 // Messages
 

@@ -715,6 +715,7 @@ const getAllNotifications = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id } = req.user;
+    const { language } = req.query;
 
     const notifications = await Notification.findAll({
       where: {
@@ -723,16 +724,26 @@ const getAllNotifications = async (
       include: {
         model: Game,
         as: "game",
+        include: [
+          {
+            model: Stadion,
+            as: "stadion",
+            attributes: [
+              [`title_${language}`, `title`],
+              [`address_${language}`, `address`],
+            ],
+          },
+        ],
       },
     });
     Notification.update(
       {
-        isNew: true,
+        isNew: false,
       },
       {
         where: {
           userId: id,
-          isNew: false,
+          isNew: true,
         },
       }
     );

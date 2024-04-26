@@ -76,9 +76,6 @@ const login = async (
       },
     });
 
-    //@ts-ignore
-    user.notifications = notifications;
-
     const comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
       return res
@@ -153,7 +150,12 @@ const login = async (
       }) as unknown as Invitation[];
     }
 
-    return res.send({ ...user.dataValues, accessToken, invitations });
+    return res.send({
+      ...user.dataValues,
+      accessToken,
+      invitations,
+      notifications,
+    });
   } catch (error) {
     next(error);
   }
@@ -326,10 +328,6 @@ const code = async (
         include: [{ model: Game, as: "games" }],
       });
 
-      console.log("====================================");
-      console.log(user);
-      console.log("====================================");
-
       if (!user) {
         return res
           .status(404)
@@ -342,9 +340,6 @@ const code = async (
           isNew: true,
         },
       });
-
-      //@ts-ignore
-      user.notifications = notifications;
 
       let invitations = await Invitation.findAll({
         where: {
@@ -401,7 +396,12 @@ const code = async (
           };
         }) as unknown as Invitation[];
       }
-      return res.send({ ...user.dataValues, accessToken, invitations });
+      return res.send({
+        ...user.dataValues,
+        accessToken,
+        invitations,
+        notifications,
+      });
     }
     return res.status(400).json({ success: false, message: "INVALID_CODE" });
   } catch (error) {
@@ -463,9 +463,6 @@ const authMe = async (
         isNew: true,
       },
     });
-
-    //@ts-ignore
-    user.notifications = notifications;
 
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
@@ -531,7 +528,7 @@ const authMe = async (
       }) as unknown as Invitation[];
     }
 
-    res.send({ ...user.dataValues, accessToken, invitations });
+    res.send({ ...user.dataValues, accessToken, invitations, notifications });
   } catch (error) {
     next(error);
   }
@@ -720,6 +717,9 @@ const getAllNotifications = async (
     const { id } = req.user;
 
     const notifications = await Notification.findAll({
+      where: {
+        userId: id,
+      },
       include: {
         model: Game,
         as: "game",
@@ -731,6 +731,7 @@ const getAllNotifications = async (
       },
       {
         where: {
+          userId: id,
           isNew: false,
         },
       }

@@ -91,9 +91,7 @@ app.use("/api/v2", GroupRouter);
 
 app.use(errorHandler);
 
-const io = new Server({
-  path: "/socket",
-});
+const io = new Server(server);
 
 (global as typeof globalThis & { io: Server }).io = io;
 

@@ -44,7 +44,6 @@ const getAllGroups = async (
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
-        onlyOneGame: false,
       },
     });
 
@@ -53,6 +52,7 @@ const getAllGroups = async (
     const groups = await Group.findAll({
       where: {
         id: groupIds,
+        forPublic: false,
       },
       include: [
         {
@@ -73,6 +73,7 @@ const getAllGroups = async (
       ],
       attributes: [
         "id",
+        "title",
         "lastMessageTimestamp",
         [
           sequelize.literal(`(
@@ -126,7 +127,6 @@ const getGroupMessages = async (
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
-        onlyOneGame: false,
       },
     });
 
@@ -187,7 +187,6 @@ const send = async (
     const userGroups = await UserGroup.findAll({
       where: {
         userId,
-        onlyOneGame: false,
       },
     });
 

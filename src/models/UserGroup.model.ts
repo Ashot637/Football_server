@@ -5,7 +5,6 @@ interface UserGroupAttributes {
   id: number;
   userId: number;
   groupId: number;
-  onlyOneGame?: boolean;
   lastSeenMessageTime?: Date;
 }
 
@@ -19,7 +18,6 @@ class UserGroup
   public id!: number;
   public userId!: number;
   public groupId!: number;
-  public onlyOneGame?: boolean;
   public lastSeenMessageTime?: Date;
 
   public readonly createdAt!: Date;
@@ -31,7 +29,6 @@ UserGroup.init(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: { type: DataTypes.INTEGER, allowNull: false, field: "userId" },
     groupId: { type: DataTypes.INTEGER, allowNull: false, field: "groupId" },
-    onlyOneGame: { type: DataTypes.BOOLEAN, defaultValue: false },
     lastSeenMessageTime: { type: DataTypes.DATE, allowNull: true },
   },
   {

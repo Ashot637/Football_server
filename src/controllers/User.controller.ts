@@ -1,4 +1,11 @@
-import { Game, Invitation, Stadion, User, UserGame } from "../models";
+import {
+  Game,
+  Invitation,
+  Notification,
+  Stadion,
+  User,
+  UserGame,
+} from "../models";
 import jwt from "jsonwebtoken";
 import type { NextFunction, Request, Response } from "express";
 import { ROLES } from "../types/Roles";
@@ -49,16 +56,28 @@ const login = async (
 
     const user = await User.findOne({
       where: { phone },
-      include: {
-        model: Game,
-        as: "games",
-      },
+      include: [
+        {
+          model: Game,
+          as: "games",
+        },
+      ],
     });
     if (!user) {
       return res
         .status(401)
         .json({ success: false, message: "INVALID_PHONE_OR_PASWORD" });
     }
+
+    const notifications = await Notification.count({
+      where: {
+        userId: user.id,
+        isNew: true,
+      },
+    });
+
+    //@ts-ignore
+    user.notifications = notifications;
 
     const comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
@@ -284,7 +303,7 @@ const code = async (
     // if (usersToVerify[phone] === +code) {
     if (1234 === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await User.create({
+      const newUser = await User.create({
         ip,
         phone,
         name,
@@ -294,7 +313,7 @@ const code = async (
       });
 
       const accessToken = jwt.sign(
-        { id: user.id, role: user.role },
+        { id: newUser.id, role: newUser.role },
         process.env.SECRET_KEY!,
         {
           expiresIn: "7d",
@@ -303,9 +322,33 @@ const code = async (
 
       delete usersToVerify[phone];
 
+      const user = await User.findByPk(newUser.id, {
+        include: [{ model: Game, as: "games" }],
+      });
+
+      console.log("====================================");
+      console.log(user);
+      console.log("====================================");
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      const notifications = await Notification.count({
+        where: {
+          userId: user.id,
+          isNew: true,
+        },
+      });
+
+      //@ts-ignore
+      user.notifications = notifications;
+
       let invitations = await Invitation.findAll({
         where: {
-          ip,
+          ip: user.ip,
         },
       });
 
@@ -335,21 +378,29 @@ const code = async (
             dataValues: { stadion: { dataValues: { title: string } } };
             startTime: string;
           };
+          if (
+            // @ts-ignore
+            user.dataValues.games.find(
+              // @ts-ignore
+              (g) => g.groupId === game.groupId
+            )
+          ) {
+            return {
+              ...invitation.dataValues,
+              stadion: game.dataValues.stadion.dataValues.title,
+              startTime: game.startTime,
+              hasGame: true,
+              gameId: game.id,
+            };
+          }
           return {
-            ...invitation?.dataValues,
-            stadion: game?.dataValues?.stadion?.dataValues?.title,
-            startTime: game?.startTime,
+            ...invitation.dataValues,
+            stadion: game.dataValues.stadion.dataValues.title,
+            startTime: game.startTime,
+            hasGame: false,
           };
-        }) as unknown as (Invitation & {
-          stadion: string;
-          startTime: string;
-        })[];
+        }) as unknown as Invitation[];
       }
-
-      if (!games?.length) {
-        invitations = [];
-      }
-
       return res.send({ ...user.dataValues, accessToken, invitations });
     }
     return res.status(400).json({ success: false, message: "INVALID_CODE" });
@@ -398,13 +449,23 @@ const authMe = async (
     );
 
     const user = await User.findByPk(id, {
-      include: { model: Game, as: "games" },
+      include: [{ model: Game, as: "games" }],
     });
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    const notifications = await Notification.count({
+      where: {
+        userId: user.id,
+        isNew: true,
+      },
+    });
+
+    //@ts-ignore
+    user.notifications = notifications;
 
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
@@ -645,25 +706,35 @@ const remove = async (
   }
 };
 
-// const updateStatus = async (req: RequestWithUser, res: Response, next: NextFunction) => {
-//   try {
-//     if (!req.user) {
-//       return res.status(401).json({ success: false, message: 'Not authenticated' });
-//     }
-//     const { id } = req.user;
-//     const { isOrganizer } = req.body;
+const getAllNotifications = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id } = req.user;
 
-//     await User.update(
-//       {
-//         isOrganizer,
-//       },
-//       { where: { id } },
-//     );
-//     return res.send({ success: true });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    const notifications = await Notification.findAll();
+    Notification.update(
+      {
+        isNew: true,
+      },
+      {
+        where: {
+          isNew: false,
+        },
+      }
+    );
+    return res.send(notifications);
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default {
   register,
@@ -680,5 +751,6 @@ export default {
   checkPhone,
   checkCode,
   changePassword,
+  getAllNotifications,
   // updateStatus,
 };

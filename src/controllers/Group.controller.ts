@@ -30,6 +30,41 @@ const getAll = async (
   }
 };
 
+const getAllThatUserOwnes = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id } = req.user;
+    const user = await User.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: true, message: "User not found" });
+    }
+
+    const groups = await Group.findAll({
+      where: {
+        ownerId: user.id,
+      },
+    });
+
+    //@ts-ignore
+    return res.send(groups);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getOne = async (
   req: RequestWithUser,
   res: Response,
@@ -171,6 +206,7 @@ const leaveFromGroup = async (
 
 export default {
   getAll,
+  getAllThatUserOwnes,
   getOne,
   create,
   leaveFromGroup,

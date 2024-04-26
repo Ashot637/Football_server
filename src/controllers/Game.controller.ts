@@ -9,12 +9,13 @@ import {
   UserGroup,
   Invitation,
   GameUniforms,
+  StadionNotification,
+  Notification,
 } from "../models";
 import { type RequestWithUser } from "../types/RequestWithUser";
 import { Op, type WhereOptions } from "sequelize";
 import dayjs from "dayjs";
 import { ROLES } from "../types/Roles";
-import StadionNotification from "../models/StadionNotification.model";
 import { INVITATION_TYPES } from "../models/Invitation.model";
 
 interface CreateRequest {
@@ -703,7 +704,7 @@ const getOne = async (
           },
           {
             model: GameUniforms,
-            as: "unfiroms",
+            as: "uniforms",
           },
         ],
       });
@@ -718,7 +719,7 @@ const getOne = async (
           { model: User, as: "users" },
           {
             model: GameUniforms,
-            as: "unfiroms",
+            as: "uniforms",
           },
         ],
       });
@@ -1246,7 +1247,10 @@ const cancel = async (
     const { gameId } = req.params;
 
     const game = await Game.findByPk(gameId, {
-      include: { model: Group, as: "group", attributes: ["id"] },
+      include: [
+        { model: Group, as: "group", attributes: ["id"] },
+        { model: User, as: "users" },
+      ],
     });
 
     if (!game) {
@@ -1260,6 +1264,14 @@ const cancel = async (
         gameId,
         userId,
       },
+    });
+
+    //@ts-ignore
+    game.users.forEach((user: User) => {
+      Notification.create({
+        userId: user.id,
+        gameId: game.id,
+      });
     });
 
     if (!gameToCancel) {

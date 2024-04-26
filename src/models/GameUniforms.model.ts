@@ -25,7 +25,11 @@ class GameUniforms
 GameUniforms.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    indexes: { type: DataTypes.ARRAY(DataTypes.INTEGER), allowNull: false },
+    indexes: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      allowNull: false,
+      defaultValue: [],
+    },
     gameId: { type: DataTypes.INTEGER },
   },
   {

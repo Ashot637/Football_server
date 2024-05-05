@@ -5,6 +5,7 @@ import {
   Stadion,
   User,
   UserGame,
+  UserGroup,
 } from "../models";
 import jwt from "jsonwebtoken";
 import type { NextFunction, Request, Response } from "express";
@@ -16,6 +17,8 @@ import fs from "fs";
 import path from "path";
 import bcrypt from "bcrypt";
 import { Op } from "sequelize";
+import { INVITATION_TYPES } from "../models/Invitation.model";
+import { sendMessageToNumber } from "../helpers/sendMessageToNumber";
 
 interface RegisterRequest {
   name: string;
@@ -179,9 +182,7 @@ const checkPhone = async (req: Request, res: Response, next: NextFunction) => {
     const code = generateCode();
 
     usersToVerify[phone] = code;
-    console.log("====================================");
-    console.log(usersToVerify);
-    console.log("====================================");
+    await sendMessageToNumber(phone, String(code));
 
     return res.send({ success: true });
   } catch (error) {
@@ -193,7 +194,7 @@ const checkCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone, code } = req.body;
 
-    if (code === "1234") {
+    if (+code === usersToVerify[phone]) {
       return res.send({ success: true });
     }
     return res.status(401).json({ success: false, message: "INVALID_CODE" });
@@ -212,6 +213,7 @@ const generateUserCode = async (
     const code = generateCode();
 
     usersToVerify[phone] = code;
+    await sendMessageToNumber(phone, String(code));
 
     return res.json({ success: true });
   } catch (error) {
@@ -229,10 +231,8 @@ const regenerateUserCode = async (
     const code = generateCode();
 
     usersToVerify[phone] = code;
+    await sendMessageToNumber(phone, String(code));
 
-    console.log("====================================");
-    console.log(usersToVerify);
-    console.log("====================================");
     return res.json({ success: true });
   } catch (error) {
     next(error);
@@ -247,7 +247,7 @@ const changePassword = async (
   try {
     const { phone, code, password } = req.body;
 
-    if (1234 !== +code) {
+    if (usersToVerify[phone] !== +code) {
       return res.status(400).json({ success: false, message: "INVALID_CODE" });
     }
 
@@ -303,7 +303,7 @@ const code = async (
     }
 
     // if (usersToVerify[phone] === +code) {
-    if (1234 === +code) {
+    if (usersToVerify[phone] === +code) {
       const passwordHash = await bcrypt.hash(password, 10);
       const newUser = await User.create({
         ip,
@@ -496,8 +496,23 @@ const authMe = async (
       ],
     });
 
-    if (games?.length) {
-      invitations = invitations.map((invitation) => {
+    const userGroups = await UserGroup.findAll({
+      where: {
+        userId: id,
+      },
+    });
+
+    invitations = invitations.map((invitation) => {
+      if (invitation.type === INVITATION_TYPES.GROUP) {
+        if (userGroups.find((group) => group.groupId === invitation.groupId)) {
+          return {
+            ...invitation.dataValues,
+            hasGroup: true,
+          };
+        }
+        return { ...invitation.dataValues };
+      }
+      if (games.length) {
         const game = games.find(
           (game) => game.groupId === invitation.groupId
         ) as Game & {
@@ -525,8 +540,9 @@ const authMe = async (
           startTime: game.startTime,
           hasGame: false,
         };
-      }) as unknown as Invitation[];
-    }
+      }
+      return { ...invitation.dataValues };
+    }) as unknown as Invitation[];
 
     res.send({ ...user.dataValues, accessToken, invitations, notifications });
   } catch (error) {
@@ -592,12 +608,12 @@ const update = async (
       }
     );
 
-    if (affectedRowsCount == 0) {
+    if (affectedRowsCount === 0) {
       return res
         .status(400)
         .json({ success: false, message: "Something went wrong" });
     }
-    res.send(updatedUser);
+    return res.send(updatedUser);
   } catch (error) {
     next(error);
   }
@@ -686,9 +702,9 @@ const remove = async (
         },
       });
 
-      for (const game of games) {
-        game.decrement("playersCount", { by: 1 });
-      }
+      // for (const game of games) {
+      //   game.decrement("playersCount", { by: 1 });
+      // }
     }
 
     await UserGame.destroy({

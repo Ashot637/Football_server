@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { type RequestWithUser } from "../types/RequestWithUser";
 import { Game, Group, Stadion, User, UserGame, UserGroup } from "../models";
+import { messages } from "@trycourier/courier/api";
 
 const getAll = async (
   req: RequestWithUser,
@@ -186,9 +187,9 @@ const leaveFromGroup = async (
         },
       });
 
-      for (const game of games) {
-        game.decrement("playersCount", { by: 1 });
-      }
+      // for (const game of games) {
+      //   game.decrement("playersCount", { by: 1 });
+      // }
     }
 
     await UserGame.destroy({
@@ -204,10 +205,43 @@ const leaveFromGroup = async (
   }
 };
 
+const remove = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id: userId } = req.user;
+    const { id } = req.params;
+
+    const deletedRowsCount = await Group.destroy({
+      cascade: true,
+      where: {
+        id,
+        ownerId: userId,
+      },
+    });
+
+    if (!deletedRowsCount) {
+      return res.send({ success: false, messages: "Group not found" });
+    }
+
+    return res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getAll,
   getAllThatUserOwnes,
   getOne,
   create,
   leaveFromGroup,
+  remove,
 };

@@ -17,6 +17,30 @@ import { Op, type WhereOptions } from "sequelize";
 import dayjs from "dayjs";
 import { ROLES } from "../types/Roles";
 import { INVITATION_TYPES } from "../models/Invitation.model";
+import literalPlayersCount from "../helpers/literalPlayersCount";
+import * as uuid from "uuid";
+import cron, { type ScheduledTask } from "node-cron";
+
+const cronExpressions: Map<string, ScheduledTask> = new Map();
+
+function scheduleTask(callback: () => void, id: string) {
+  // const now = new Date();
+
+  // const hour = now.getHours();
+  // const minute = now.getMinutes();
+
+  // let dayOfWeek = now.getDay();
+
+  // if (
+  //   now.getHours() > hour ||
+  //   (now.getHours() === hour && now.getMinutes() >= minute)
+  // ) {
+  //   dayOfWeek = (dayOfWeek + 1) % 7;
+  // }
+  // const cronExpression = `${minute} ${hour} * * ${dayOfWeek}`;
+
+  cronExpressions.set(id, cron.schedule("* * * * 1", callback));
+}
 
 interface CreateRequest {
   price: number;
@@ -50,6 +74,7 @@ const create = async (
       maxPlayersCount,
       stadionId,
       groupId: group.id,
+      uuid: uuid.v4(),
     });
 
     await GameUniforms.create({
@@ -81,6 +106,8 @@ const organizerCreate = async (
 
     let game: Game | undefined;
     let games: Game[] | undefined;
+
+    const gameUuid = uuid.v4();
     if (range === 1) {
       game = await Game.create({
         price: price || 0,
@@ -91,6 +118,7 @@ const organizerCreate = async (
         isPublic: false,
         groupId,
         creatorId: userId,
+        uuid: gameUuid,
       });
       await GameUniforms.create({
         gameId: game.id,
@@ -111,6 +139,8 @@ const organizerCreate = async (
           isPublic: false,
           groupId,
           creatorId: userId,
+          isReplaying: true,
+          uuid: gameUuid,
         },
         {
           startTime: dayjs(startTime).add(1, "week").toDate(),
@@ -121,6 +151,8 @@ const organizerCreate = async (
           isPublic: false,
           groupId,
           creatorId: userId,
+          isReplaying: true,
+          uuid: gameUuid,
         },
         {
           startTime: dayjs(startTime).add(2, "week").toDate(),
@@ -131,6 +163,8 @@ const organizerCreate = async (
           isPublic: false,
           groupId,
           creatorId: userId,
+          isReplaying: true,
+          uuid: gameUuid,
         },
         {
           startTime: dayjs(startTime).add(3, "week").toDate(),
@@ -141,6 +175,8 @@ const organizerCreate = async (
           isPublic: false,
           groupId,
           creatorId: userId,
+          isReplaying: true,
+          uuid: gameUuid,
         },
       ]);
       games.forEach((game) => {
@@ -153,6 +189,38 @@ const organizerCreate = async (
           indexes: uniforms,
         });
       });
+
+      scheduleTask(async () => {
+        const lastGame = await Game.findOne({
+          where: {
+            uuid: gameUuid,
+          },
+          order: [["startTime", "DESC"]],
+        });
+        if (!lastGame) {
+          return;
+        }
+        const game = await Game.create({
+          price: lastGame.price,
+          startTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+          endTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+          maxPlayersCount: lastGame.maxPlayersCount,
+          stadionId: lastGame.stadionId,
+          isPublic: lastGame.isPublic,
+          groupId: lastGame.groupId,
+          creatorId: lastGame.creatorId,
+          isReplaying: lastGame.isReplaying,
+          uuid: lastGame.uuid,
+        });
+        UserGame.create({
+          userId,
+          gameId: +game.id,
+        });
+        GameUniforms.create({
+          gameId: game.id,
+          indexes: uniforms,
+        });
+      }, gameUuid);
     } else {
       return res.json(400).send({ success: false, message: "Missing range" });
     }
@@ -198,39 +266,40 @@ const extendGame = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
-    }
-    const { id: userId } = req.user;
-    const { groupId } = req.body;
+    return res.send({ succes: false });
+    // if (!req.user) {
+    //   return res
+    //     .status(401)
+    //     .json({ success: false, message: "Not authenticated" });
+    // }
+    // const { id: userId } = req.user;
+    // const { groupId } = req.body;
 
-    const game = await Game.findOne({
-      where: {
-        groupId,
-      },
-      order: [["startTime", "DESC"]],
-    });
+    // const game = await Game.findOne({
+    //   where: {
+    //     groupId,
+    //   },
+    //   order: [["startTime", "DESC"]],
+    // });
 
-    if (!game) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Game not found" });
-    }
+    // if (!game) {
+    //   return res
+    //     .status(404)
+    //     .json({ success: false, message: "Game not found" });
+    // }
 
-    const newGame = await Game.create({
-      startTime: dayjs(game.startTime).add(1, "week").toDate(),
-      endTime: dayjs(game?.endTime).add(1, "week").toDate(),
-      price: game.price || 0,
-      maxPlayersCount: 99,
-      stadionId: game?.stadionId,
-      isPublic: false,
-      groupId: groupId,
-      creatorId: userId,
-    });
+    // const newGame = await Game.create({
+    //   startTime: dayjs(game.startTime).add(1, "week").toDate(),
+    //   endTime: dayjs(game?.endTime).add(1, "week").toDate(),
+    //   price: game.price || 0,
+    //   maxPlayersCount: 99,
+    //   stadionId: game?.stadionId,
+    //   isPublic: false,
+    //   groupId: groupId,
+    //   creatorId: userId,
+    // });
 
-    return res.send(newGame);
+    // return res.send(newGame);
   } catch (error) {
     next(error);
   }
@@ -293,6 +362,9 @@ const getAllGroupGames = async (
           ],
         },
       ],
+      attributes: {
+        include: [literalPlayersCount],
+      },
       order: [["startTime", "ASC"]],
     });
 
@@ -317,7 +389,7 @@ const changeWillPlayGameStatus = async (
     const { id, status, prevStatus } = req.body;
 
     if (status) {
-      Game.increment("playersCount", { by: 1, where: { id } });
+      // Game.increment("playersCount", { by: 1, where: { id } });
       UserGame.update(
         {
           willPlay: status,
@@ -330,7 +402,7 @@ const changeWillPlayGameStatus = async (
         }
       );
     } else if (status === null && prevStatus) {
-      Game.decrement("playersCount", { by: 1, where: { id } });
+      // Game.decrement("playersCount", { by: 1, where: { id } });
       UserGame.update(
         {
           willPlay: status,
@@ -554,6 +626,9 @@ const getAll = async (
             ],
           },
         ],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [
           ["playersCount", "DESC"],
           ["startTime", "DESC"],
@@ -562,6 +637,9 @@ const getAll = async (
     } else {
       games = await Game.findAll({
         include: [{ model: Stadion, as: "stadion" }],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [
           ["startTime", "DESC"],
           ["playersCount", "DESC"],
@@ -604,6 +682,9 @@ const getByStadionId = async (
           ],
         },
       ],
+      attributes: {
+        include: [literalPlayersCount],
+      },
       order: [
         ["playersCount", "DESC"],
         ["startTime", "DESC"],
@@ -636,6 +717,9 @@ const getAllFromAdminPanel = async (
     if (role === ROLES.ADMIN) {
       games = await Game.findAll({
         include: [{ model: Stadion, as: "stadion" }],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [
           ["startTime", "DESC"],
           ["playersCount", "DESC"],
@@ -648,6 +732,9 @@ const getAllFromAdminPanel = async (
       games = await Game.findAll({
         where: {
           stadionId: stadionsIds,
+        },
+        attributes: {
+          include: [literalPlayersCount],
         },
         include: [{ model: Stadion, as: "stadion" }],
       });
@@ -670,6 +757,9 @@ const getOne = async (
 
     if (language) {
       game = await Game.findByPk(id, {
+        attributes: {
+          include: [literalPlayersCount],
+        },
         include: [
           {
             model: Stadion,
@@ -710,6 +800,9 @@ const getOne = async (
       });
     } else {
       game = await Game.findByPk(id, {
+        attributes: {
+          include: [literalPlayersCount],
+        },
         include: [
           {
             model: Stadion,
@@ -817,7 +910,7 @@ const remove = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId, role } = req.user;
-    const { ids } = req.body;
+    const { ids, deleteReplaying } = req.body;
 
     if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
       await Game.destroy({
@@ -832,20 +925,39 @@ const remove = async (
       });
       await UserGame.destroy({});
     } else {
-      const games = await Game.findAll({
-        where: {
-          id: ids,
-          creatorId: userId,
-        },
-      });
-      await Game.destroy({
-        where: {
-          id: ids,
-          creatorId: userId,
-        },
-      });
+      const game = await Game.findByPk(ids[0]);
+      if (!game) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Game not found" });
+      }
 
-      for (const game of games) {
+      if (deleteReplaying) {
+        cronExpressions.get(game.uuid)?.stop();
+        await Game.destroy({
+          where: {
+            uuid: game.uuid,
+            creatorId: userId,
+          },
+        });
+
+        const games = await Game.findAll({ where: { uuid: game.uuid } });
+
+        for (const game of games) {
+          await UserGame.destroy({
+            where: {
+              gameId: game.id,
+            },
+          });
+        }
+      } else {
+        await Game.destroy({
+          where: {
+            id: ids,
+            creatorId: userId,
+          },
+        });
+
         await UserGame.destroy({
           where: {
             gameId: game.id,
@@ -964,9 +1076,12 @@ const register = async (
         { model: Group, as: "group", attributes: ["id"] },
         { model: Stadion, as: "stadion", attributes: ["title_en"] },
       ],
+      attributes: {
+        include: [literalPlayersCount],
+      },
     });
 
-    game?.increment("playersCount", { by: 1 });
+    // game?.increment("playersCount", { by: 1 });
 
     if (!game) {
       return res
@@ -974,11 +1089,11 @@ const register = async (
         .json({ success: false, message: "Game not found" });
     }
 
-    if (game.playersCount === game.maxPlayersCount) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Already have maximum players" });
-    }
+    // if (game.playersCount === game.maxPlayersCount) {
+    //   return res
+    //     .status(403)
+    //     .json({ success: false, message: "Already have maximum players" });
+    // }
 
     const userGame = await UserGame.create({
       userId,
@@ -1019,6 +1134,8 @@ const getMyGames = async (
         .status(401)
         .json({ success: false, message: "Not authenticated" });
     }
+    console.log(cronExpressions);
+
     const { id: userId } = req.user;
     const { language, date } = req.query;
 
@@ -1065,6 +1182,9 @@ const getMyGames = async (
             ],
           },
         ],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [["startTime", "ASC"]],
       });
     } else {
@@ -1086,6 +1206,9 @@ const getMyGames = async (
             ],
           },
         ],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [["startTime", "ASC"]],
       });
     }
@@ -1135,6 +1258,9 @@ const getOpenGames = async (
             ],
           },
         ],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [["startTime", "ASC"]],
       });
     } else {
@@ -1156,6 +1282,9 @@ const getOpenGames = async (
             ],
           },
         ],
+        attributes: {
+          include: [literalPlayersCount],
+        },
         order: [["startTime", "ASC"]],
       });
     }
@@ -1223,6 +1352,9 @@ const getActivity = async (
           ],
         },
       ],
+      attributes: {
+        include: [literalPlayersCount],
+      },
       order: [["startTime", "ASC"]],
     });
 
@@ -1287,7 +1419,7 @@ const cancel = async (
       },
     });
 
-    game?.decrement("playersCount", { by: 1 });
+    // game?.decrement("playersCount", { by: 1 });
 
     UserGroup.destroy({
       where: {

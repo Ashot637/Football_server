@@ -8,11 +8,12 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import http from "http";
+import https from "https";
 import sequelize from "./src/db";
 import bodyParser from "body-parser";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import jwt, { type GetPublicKeyOrSecret, type Secret } from "jsonwebtoken";
 import fileUpload from "express-fileupload";
 import errorHandler from "./src/middlewares/errorHandler";
@@ -29,7 +30,13 @@ import { groupsSocket, userSockets } from "./src/sockets/userSockets";
 import { Invitation } from "./src/models";
 
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(
+  {
+    key: fs.readFileSync("/etc/nginx/server.key"),
+    cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
+  },
+  app
+);
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -62,7 +69,7 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
       where: {
         ip: ipAddress,
         groupId: decoded.groupId,
-        gameId: decoded.gameId,
+        gameId: decoded.gameId ?? 0,
         type: decoded.type,
       },
     });
@@ -92,8 +99,6 @@ app.use("/api/v2", GroupRouter);
 app.use(errorHandler);
 
 const io = new Server(server);
-
-(global as typeof globalThis & { io: Server }).io = io;
 
 io.on("connection", (socket: Socket) => {
   socket.on("user-connected", (userId) => {

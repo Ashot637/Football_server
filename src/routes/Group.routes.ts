@@ -14,6 +14,11 @@ router.get(
 router.get("/group/getOne/:id", checkRole(ROLES.USER), GroupController.getOne);
 router.post("/group/create", checkRole(ROLES.USER), GroupController.create);
 router.delete(
+  "/group/delete/:id",
+  checkRole(ROLES.USER),
+  GroupController.remove
+);
+router.delete(
   "/group/leave/:id",
   checkRole(ROLES.USER),
   GroupController.leaveFromGroup

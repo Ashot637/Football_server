@@ -34,6 +34,7 @@ const server = https.createServer(
   {
     key: fs.readFileSync("/etc/nginx/server.key"),
     cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
+    ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.ca-bundle"),
   },
   app
 );

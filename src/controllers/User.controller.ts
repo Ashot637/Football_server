@@ -72,13 +72,6 @@ const login = async (
         .json({ success: false, message: "INVALID_PHONE_OR_PASWORD" });
     }
 
-    const notifications = await Notification.count({
-      where: {
-        userId: user.id,
-        isNew: true,
-      },
-    });
-
     const comparePassword = bcrypt.compareSync(password, user.password);
     if (!comparePassword) {
       return res
@@ -94,9 +87,22 @@ const login = async (
       }
     );
 
+    if (user.role === ROLES.ADMIN || user.role === ROLES.STADION_OWNER) {
+      return res.send({
+        ...user.dataValues,
+        accessToken,
+      });
+    }
+
     user.expoPushToken = expoPushToken;
     user.save();
 
+    const notifications = await Notification.count({
+      where: {
+        userId: user.id,
+        isNew: true,
+      },
+    });
     let invitations = await Invitation.findAll({
       where: {
         ip: user.ip,

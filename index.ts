@@ -9,6 +9,7 @@ import express, {
   type Response,
 } from "express";
 import https from "https";
+import http from "http";
 import sequelize from "./src/db";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -30,12 +31,12 @@ import { groupsSocket, userSockets } from "./src/sockets/userSockets";
 import { Invitation } from "./src/models";
 
 const app = express();
-const server = https.createServer(
-  {
-    key: fs.readFileSync("/etc/nginx/server.key"),
-    cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
-    ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.crt"),
-  },
+const server = http.createServer(
+  // {
+  //   key: fs.readFileSync("/etc/nginx/server.key"),
+  //   cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
+  //   ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.crt"),
+  // },
   app
 );
 

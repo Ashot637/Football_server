@@ -8,6 +8,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
+import http from "http";
 import https from "https";
 import sequelize from "./src/db";
 import bodyParser from "body-parser";
@@ -30,16 +31,17 @@ import { groupsSocket, userSockets } from "./src/sockets/userSockets";
 import { Invitation } from "./src/models";
 
 const app = express();
-const server = https.createServer(
-  {
-    key: fs.readFileSync("/etc/nginx/server.key"),
-    cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
-    ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.crt"),
-    requestCert: false,
-    rejectUnauthorized: false,
-  },
+const server = http.createServer(
+  //   {
+  //     key: fs.readFileSync("/etc/nginx/server.key"),
+  //     cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app-ssl-bundle.crt"),
+  //     ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.crt"),
+  //     requestCert: false,
+  //     rejectUnauthorized: false,
+  //   },
   app
 );
+// const server = http.createServer(app);
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -101,7 +103,9 @@ app.use("/api/v2", GroupRouter);
 
 app.use(errorHandler);
 
-const io = new Server(server);
+const io = new Server(server, {
+  transports: ["websocket"],
+});
 
 io.on("connection", (socket: Socket) => {
   socket.on("user-connected", (userId) => {

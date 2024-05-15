@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { type RequestWithUser } from "../types/RequestWithUser";
 import { Game, Group, Stadion, User, UserGame, UserGroup } from "../models";
+import literalPlayersCount from "../helpers/literalPlayersCount";
 
 const getAll = async (
   req: RequestWithUser,
@@ -91,6 +92,9 @@ const getOne = async (
         {
           model: Game,
           as: "game",
+          attributes: {
+            include: [literalPlayersCount],
+          },
           include: [
             {
               model: Stadion,

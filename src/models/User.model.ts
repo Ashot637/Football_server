@@ -1,6 +1,6 @@
-import { Model, Optional, DataTypes } from 'sequelize';
-import sequelize from '../db';
-import { ROLES } from '../types/Roles';
+import { Model, Optional, DataTypes } from "sequelize";
+import sequelize from "../db";
+import { ROLES } from "../types/Roles";
 
 interface UserAttributes {
   id: number;
@@ -16,9 +16,12 @@ interface UserAttributes {
   ip: string;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, "id"> {}
 
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
   public id!: number;
   public name!: string;
   public phone!: string;
@@ -43,16 +46,20 @@ User.init(
     phone: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
     expoPushToken: { type: DataTypes.STRING, allowNull: true },
-    email: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
-    address: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
-    img: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
-    hasMessage: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
-    role: { type: DataTypes.STRING, defaultValue: 'USER' },
+    email: { type: DataTypes.STRING, allowNull: true, defaultValue: "" },
+    address: { type: DataTypes.STRING, allowNull: true, defaultValue: "" },
+    img: { type: DataTypes.STRING, allowNull: true, defaultValue: "" },
+    hasMessage: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
+    role: { type: DataTypes.STRING, defaultValue: "USER" },
   },
   {
     sequelize,
-    modelName: 'User',
-  },
+    modelName: "User",
+  }
 );
 
 export default User;

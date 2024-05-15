@@ -222,7 +222,7 @@ const organizerCreate = async (
         });
       }, gameUuid);
     } else {
-      return res.json(400).send({ success: false, message: "Missing range" });
+      return res.status(400).send({ success: false, message: "Missing range" });
     }
 
     const stadion = await Stadion.findByPk(stadionId, {
@@ -984,8 +984,15 @@ const update = async (
         .json({ success: false, message: "Not authenticated" });
     }
     const { id: userId, role } = req.user;
-    const { price, startTime, endTime, maxPlayersCount, stadionId, uniforms } =
-      req.body;
+    const {
+      price,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      uniforms,
+      isReplaying,
+    } = req.body;
     const { id } = req.params;
 
     let result: [number, Game[]];
@@ -1017,41 +1024,114 @@ const update = async (
         }
       );
     } else {
-      result = await Game.update(
-        {
-          price,
-          startTime,
-          endTime,
-          maxPlayersCount,
-          stadionId,
-        },
-        {
+      if (isReplaying) {
+        const game = await Game.findOne({
           where: {
             id: id,
             creatorId: userId,
           },
-          returning: true,
+        });
+
+        if (!game) {
+          return res.status(404).json({ message: "Game not found" });
         }
-      );
-      if (result?.[1]?.[0]) {
-        GameUniforms.update(
+        result = await Game.update(
           {
-            indexes: uniforms,
+            price,
+            startTime,
+            endTime,
+            maxPlayersCount,
+            stadionId,
           },
           {
             where: {
-              gameId: result[1][0].id,
+              uuid: game.uuid,
+              creatorId: userId,
             },
+            returning: true,
           }
         );
+        scheduleTask(async () => {
+          const lastGame = await Game.findOne({
+            where: {
+              uuid: game.uuid,
+            },
+            order: [["startTime", "DESC"]],
+          });
+          if (!lastGame) {
+            return;
+          }
+          const newGame = await Game.create({
+            price: lastGame.price,
+            startTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+            endTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+            maxPlayersCount: lastGame.maxPlayersCount,
+            stadionId: lastGame.stadionId,
+            isPublic: lastGame.isPublic,
+            groupId: lastGame.groupId,
+            creatorId: lastGame.creatorId,
+            isReplaying: lastGame.isReplaying,
+            uuid: lastGame.uuid,
+          });
+          UserGame.create({
+            userId,
+            gameId: +newGame.id,
+          });
+          GameUniforms.create({
+            gameId: newGame.id,
+            indexes: uniforms,
+          });
+        }, game.uuid);
+        const games = await Game.findAll({
+          where: {
+            uuid: game.id,
+          },
+        });
+        games.forEach((game) => {
+          GameUniforms.update(
+            {
+              indexes: uniforms,
+            },
+            {
+              where: {
+                gameId: game.id,
+              },
+            }
+          );
+        });
+      } else {
+        result = await Game.update(
+          {
+            price,
+            startTime,
+            endTime,
+            maxPlayersCount,
+            stadionId,
+          },
+          {
+            where: {
+              id: id,
+              creatorId: userId,
+            },
+            returning: true,
+          }
+        );
+        if (result?.[1]?.[0]) {
+          GameUniforms.update(
+            {
+              indexes: uniforms,
+            },
+            {
+              where: {
+                gameId: result[1][0].id,
+              },
+            }
+          );
+        }
       }
     }
 
-    if (result[0] === 0) {
-      return res.status(404).json({ message: "Game not found" });
-    }
-
-    return res.json(result[1]);
+    return res.json({ success: true });
   } catch (error) {
     next(error);
   }

@@ -26,7 +26,10 @@
     "ip": "^2.0.1",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
+    "node-device-detector": "^2.1.0",
+    "node-machine-id": "^1.1.12",
     "pg": "^8.11.3",
+    "regedit-rs": "^1.0.2",
     "sequelize": "^6.35.1",
     "socket.io": "^4.7.4",
     "uuid": "^9.0.1"

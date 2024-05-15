@@ -19,6 +19,7 @@ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import { INVITATION_TYPES } from "../models/Invitation.model";
 import { sendMessageToNumber } from "../helpers/sendMessageToNumber";
+import { type DetectResult } from "node-device-detector";
 
 interface RegisterRequest {
   name: string;
@@ -447,10 +448,13 @@ const authMe = async (
 
       return res.send({ ...user.dataValues, accessToken });
     }
-    const { expoPushToken, ip, language } = req.query;
+    const { language, expoPushToken, ip } = req.query;
 
     await User.update(
-      { expoPushToken: expoPushToken as string, ip: ip as string },
+      {
+        expoPushToken: expoPushToken as string,
+        ip: ip as string,
+      },
       { where: { id } }
     );
 

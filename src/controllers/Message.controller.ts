@@ -206,13 +206,11 @@ const send = async (
     }
 
     const GroupWithUsers: any = await Group.findByPk(+groupId, {
-      include: [
-        { model: Game, as: "game", include: [{ model: User, as: "users" }] },
-      ],
+      include: [{ model: User }],
     });
     //  as Group & { dataValues: { game: Game[] & { dataValues: { users: User[] } } } };
 
-    const users = GroupWithUsers?.dataValues.game[0].dataValues.users;
+    const users = GroupWithUsers?.Users;
 
     const onlineUserIds: number[] = groupsSocket.get(groupId) || [];
 
@@ -272,9 +270,9 @@ const send = async (
     const messageData = {
       ...message.dataValues,
       user: {
-        name: associatedUser.dataValues.name,
-        img: associatedUser.dataValues.img,
-        id: associatedUser.dataValues.id,
+        name: associatedUser.name,
+        img: associatedUser.img,
+        id: associatedUser.id,
       },
     };
 

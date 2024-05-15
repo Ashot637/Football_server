@@ -26,19 +26,14 @@ import {
   MessageRouter,
   GroupRouter,
 } from "./src/routes";
-
-import { groupsSocket, userSockets } from "./src/sockets/userSockets";
 import { Invitation } from "./src/models";
 
+import { groupsSocket, userSockets } from "./src/sockets/userSockets";
+
+import DeviceDetector from "node-device-detector";
+
 const app = express();
-const server = https.createServer(
-  {
-    key: fs.readFileSync("/etc/nginx/server.key"),
-    cert: fs.readFileSync("/etc/nginx/ssl/ballhola_app.crt"),
-    ca: fs.readFileSync("/etc/nginx/ssl/ballhola_app.ca-bundle"),
-  },
-  app
-);
+const server = http.createServer(app);
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -47,6 +42,15 @@ app.use(express.static(path.resolve(__dirname, "src", "public")));
 app.use(fileUpload({}));
 
 app.set("trust proxy", true);
+
+const detector = new DeviceDetector({
+  clientIndexes: true,
+  deviceIndexes: true,
+  deviceAliasCode: false,
+  deviceTrusted: false,
+  deviceInfo: false,
+  maxUserAgentSize: 500,
+});
 app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ipAddress = req.headers["x-forwarded-for"] as string;
@@ -62,9 +66,7 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
     );
 
     if (!ipAddress || !decoded) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Ip, from or id is empty" });
+      return res.status(400).json({ success: false, message: "Invalid link" });
     }
 
     const invitation = await Invitation.findOne({

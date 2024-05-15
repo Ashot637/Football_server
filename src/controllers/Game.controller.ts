@@ -1214,7 +1214,6 @@ const getMyGames = async (
         .status(401)
         .json({ success: false, message: "Not authenticated" });
     }
-    console.log(cronExpressions);
 
     const { id: userId } = req.user;
     const { language, date } = req.query;

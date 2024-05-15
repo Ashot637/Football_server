@@ -2,6 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { type RequestWithUser } from "../types/RequestWithUser";
 import { Game, Group, Stadion, User, UserGame, UserGroup } from "../models";
 import literalPlayersCount from "../helpers/literalPlayersCount";
+import { literal } from "sequelize";
 
 const getAll = async (
   req: RequestWithUser,
@@ -92,9 +93,6 @@ const getOne = async (
         {
           model: Game,
           as: "game",
-          attributes: {
-            include: [literalPlayersCount],
-          },
           include: [
             {
               model: Stadion,
@@ -108,11 +106,20 @@ const getOne = async (
               ],
             },
           ],
+          attributes: {
+            include: [
+              [
+                literal(
+                  `(SELECT COUNT(*) FROM "UserGames" WHERE "UserGames"."gameId" = "game"."id" AND "UserGames"."willPlay" = true)`
+                ),
+                "playersCount",
+              ],
+            ],
+          },
         },
       ],
     });
 
-    //@ts-ignore
     return res.send(group);
   } catch (error) {
     next(error);

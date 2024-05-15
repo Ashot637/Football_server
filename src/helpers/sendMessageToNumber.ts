@@ -13,5 +13,4 @@ export const sendMessageToNumber = async (
     phonenumber: phoneNumber,
     textmessage: message,
   });
-  console.log(data);
 };

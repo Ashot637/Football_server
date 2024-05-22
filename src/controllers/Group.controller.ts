@@ -1,6 +1,14 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { type RequestWithUser } from "../types/RequestWithUser";
-import { Game, Group, Stadion, User, UserGame, UserGroup } from "../models";
+import {
+  Game,
+  Group,
+  Notification,
+  Stadion,
+  User,
+  UserGame,
+  UserGroup,
+} from "../models";
 import literalPlayersCount from "../helpers/literalPlayersCount";
 import { literal } from "sequelize";
 
@@ -247,6 +255,65 @@ const remove = async (
   }
 };
 
+const joinToGroup = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id: userId } = req.user;
+    const { id, notificationId } = req.body;
+    const games = await Game.findAll({
+      where: {
+        groupId: id,
+      },
+    });
+
+    for (const game of games) {
+      const userGame = await UserGame.findOne({
+        where: {
+          userId,
+          gameId: game.id,
+        },
+      });
+
+      if (!userGame) {
+        await UserGame.create({
+          userId,
+          gameId: game.id,
+        });
+      }
+    }
+
+    await UserGroup.create({
+      groupId: id,
+      userId,
+    });
+
+    // Notification.update(
+    //   {
+    //     disabled: true,
+    //   },
+    //   {
+    //     where: {
+    //       id: notificationId,
+    //     },
+    //   }
+    // );
+
+    Notification.destroy({ where: notificationId });
+
+    return res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getAll,
   getAllThatUserOwnes,
@@ -254,4 +321,5 @@ export default {
   create,
   leaveFromGroup,
   remove,
+  joinToGroup,
 };

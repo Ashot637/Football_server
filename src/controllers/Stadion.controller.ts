@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { Facilitie, Game, Stadion, User } from "../models";
+import { Facilitie, Game, Group, Stadion, User } from "../models";
 import { Op } from "sequelize";
 import path from "path";
 import * as uuid from "uuid";

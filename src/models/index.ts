@@ -65,6 +65,9 @@ Notification.belongsTo(User, { foreignKey: "userId" });
 Game.hasMany(Notification, { foreignKey: "gameId" });
 Notification.belongsTo(Game, { as: "game", foreignKey: "gameId" });
 
+Group.hasMany(Notification, { foreignKey: "groupId" });
+Notification.belongsTo(Group, { as: "group", foreignKey: "groupId" });
+
 // Messages
 
 Group.hasMany(Game, { as: "game", foreignKey: "groupId" });

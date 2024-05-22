@@ -39,7 +39,7 @@ function scheduleTask(callback: () => void, id: string) {
   // }
   // const cronExpression = `${minute} ${hour} * * ${dayOfWeek}`;
 
-  cronExpressions.set(id, cron.schedule("* * * * 1", callback));
+  cronExpressions.set(id, cron.schedule("0 0 * * 1", callback));
 }
 
 interface CreateRequest {
@@ -533,10 +533,26 @@ const declineInvitation = async (
         .status(401)
         .json({ success: false, message: "Not authenticated" });
     }
+    const { id: userId } = req.user;
     const { id } = req.body;
+
+    const invitation = await Invitation.findByPk(id);
+
+    if (!invitation) {
+      return res
+        .status(404)
+        .send({ success: true, message: "Invitation not found" });
+    }
 
     Invitation.destroy({
       where: { id },
+    });
+
+    Notification.create({
+      userId,
+      type: invitation.type,
+      gameId: invitation.gameId,
+      groupId: invitation.groupId,
     });
 
     return res.send({ success: true });
@@ -1051,37 +1067,37 @@ const update = async (
             returning: true,
           }
         );
-        scheduleTask(async () => {
-          const lastGame = await Game.findOne({
-            where: {
-              uuid: game.uuid,
-            },
-            order: [["startTime", "DESC"]],
-          });
-          if (!lastGame) {
-            return;
-          }
-          const newGame = await Game.create({
-            price: lastGame.price,
-            startTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
-            endTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
-            maxPlayersCount: lastGame.maxPlayersCount,
-            stadionId: lastGame.stadionId,
-            isPublic: lastGame.isPublic,
-            groupId: lastGame.groupId,
-            creatorId: lastGame.creatorId,
-            isReplaying: lastGame.isReplaying,
-            uuid: lastGame.uuid,
-          });
-          UserGame.create({
-            userId,
-            gameId: +newGame.id,
-          });
-          GameUniforms.create({
-            gameId: newGame.id,
-            indexes: uniforms,
-          });
-        }, game.uuid);
+        // scheduleTask(async () => {
+        //   const lastGame = await Game.findOne({
+        //     where: {
+        //       uuid: game.uuid,
+        //     },
+        //     order: [["startTime", "DESC"]],
+        //   });
+        //   if (!lastGame) {
+        //     return;
+        //   }
+        //   const newGame = await Game.create({
+        //     price: lastGame.price,
+        //     startTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+        //     endTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+        //     maxPlayersCount: lastGame.maxPlayersCount,
+        //     stadionId: lastGame.stadionId,
+        //     isPublic: lastGame.isPublic,
+        //     groupId: lastGame.groupId,
+        //     creatorId: lastGame.creatorId,
+        //     isReplaying: lastGame.isReplaying,
+        //     uuid: lastGame.uuid,
+        //   });
+        //   UserGame.create({
+        //     userId,
+        //     gameId: +newGame.id,
+        //   });
+        //   GameUniforms.create({
+        //     gameId: newGame.id,
+        //     indexes: uniforms,
+        //   });
+        // }, game.uuid);
         const games = await Game.findAll({
           where: {
             uuid: game.id,
@@ -1555,6 +1571,80 @@ const getAllCreated = async (
   }
 };
 
+const joinToPrivateGame = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+    const { id: userId } = req.user;
+    const { id, withGroup, notificationId } = req.body;
+
+    const game = await Game.findByPk(id);
+
+    if (!game) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Game not found" });
+    }
+    const userGame = await UserGame.findOne({
+      where: {
+        userId,
+        gameId: id,
+      },
+    });
+    if (!userGame) {
+      await UserGame.create({
+        userId,
+        gameId: id,
+        willPlay: true,
+      });
+    }
+
+    // Notification.update(
+    //   {
+    //     disabled: true,
+    //   },
+    //   {
+    //     where: {
+    //       id: notificationId,
+    //     },
+    //   }
+    // );
+    Notification.destroy({ where: notificationId });
+
+    if (!withGroup) {
+      return res.send({ success: true });
+    }
+
+    const group = await Group.findOne({
+      where: {
+        id: game.groupId,
+      },
+    });
+
+    if (!group) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Group not found" });
+    }
+
+    await UserGroup.create({
+      groupId: group.id,
+      userId,
+    });
+
+    res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   create,
   organizerCreate,
@@ -1575,4 +1665,5 @@ export default {
   getAllFromAdminPanel,
   getAllCreated,
   changeWillPlayGameStatus,
+  joinToPrivateGame,
 };

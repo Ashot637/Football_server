@@ -1,5 +1,6 @@
 import {
   Game,
+  Group,
   Invitation,
   Notification,
   Stadion,
@@ -747,21 +748,28 @@ const getAllNotifications = async (
       where: {
         userId: id,
       },
-      include: {
-        model: Game,
-        as: "game",
-        include: [
-          {
-            model: Stadion,
-            as: "stadion",
-            attributes: [
-              [`title_${language}`, `title`],
-              [`address_${language}`, `address`],
-            ],
-          },
-        ],
-      },
+      include: [
+        {
+          model: Game,
+          as: "game",
+          include: [
+            {
+              model: Stadion,
+              as: "stadion",
+              attributes: [
+                [`title_${language}`, `title`],
+                [`address_${language}`, `address`],
+              ],
+            },
+          ],
+        },
+        {
+          model: Group,
+          as: "group",
+        },
+      ],
     });
+
     Notification.update(
       {
         isNew: false,

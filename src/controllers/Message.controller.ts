@@ -77,24 +77,19 @@ const getAllGroups = async (
         "lastMessageTimestamp",
         [
           sequelize.literal(`(
-            SELECT "lastSeenMessageTime" FROM "UserGroups" WHERE "userId" =  ${userId} AND "groupId" = "Group"."id"
+            SELECT COUNT(*) 
+            FROM "UserGroups" 
+            WHERE "UserGroups"."lastSeenMessageTime" < "lastMessageTimestamp" 
+            AND "UserGroups"."userId" = ${userId} 
+            AND "UserGroups"."groupId" = "Group"."id"
         )`),
-          "lastSeenMessageTime",
+          "newMessagesCount",
         ],
       ],
       order: [["lastMessageTimestamp", "DESC"]],
     });
 
-    const groupsWithNewMessages = groups.map((group) => ({
-      ...group.toJSON(),
-      game: (group as unknown as { game: Game[] }).game[0],
-      isNewMessage:
-        group.dataValues.lastMessageTimestamp! >
-        (group as Group & { dataValues: { lastSeenMessageTime: Date } })
-          .dataValues.lastSeenMessageTime,
-    }));
-
-    return res.send(groupsWithNewMessages);
+    return res.send(groups);
   } catch (error) {
     next(error);
   }

@@ -65,6 +65,11 @@ router.post(
   checkRole(ROLES.USER),
   GameController.declineInvitation
 );
+router.post(
+  "/game/joinToPrivateGame",
+  checkRole(ROLES.USER),
+  GameController.joinToPrivateGame
+);
 
 // router.post('/game/create', checkRole(ROLES.ADMIN), GameController.create);
 router.get(

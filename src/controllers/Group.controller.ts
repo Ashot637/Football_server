@@ -10,7 +10,7 @@ import {
   UserGroup,
 } from "../models";
 import literalPlayersCount from "../helpers/literalPlayersCount";
-import { literal } from "sequelize";
+import { Op, literal } from "sequelize";
 
 const getAll = async (
   req: RequestWithUser,
@@ -100,6 +100,13 @@ const getOne = async (
         },
         {
           model: Game,
+          where: {
+            startTime: {
+              [Op.gt]: new Date(),
+            },
+          },
+          required: false,
+          order: [["startTime", "ASC"]],
           as: "game",
           include: [
             {

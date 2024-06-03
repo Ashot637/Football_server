@@ -203,7 +203,7 @@ const organizerCreate = async (
         const game = await Game.create({
           price: lastGame.price,
           startTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
-          endTime: dayjs(lastGame.startTime).add(1, "week").toDate(),
+          endTime: dayjs(lastGame.endTime).add(1, "week").toDate(),
           maxPlayersCount: lastGame.maxPlayersCount,
           stadionId: lastGame.stadionId,
           isPublic: lastGame.isPublic,

@@ -162,7 +162,6 @@ const create = async (
       groupId: group.id,
       userId,
     });
-    //@ts-ignore
     return res.send(group);
   } catch (error) {
     next(error);

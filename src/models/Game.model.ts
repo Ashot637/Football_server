@@ -1,5 +1,7 @@
-import { Model, Optional, DataTypes } from "sequelize";
-import sequelize from "../db";
+import { Model, Optional, DataTypes } from 'sequelize';
+import sequelize from '../db';
+import User from './User.model';
+import UserGame from './UserGame.model'; // Убедитесь, что импортируете UserGame
 
 interface GameAttributes {
   id: number;
@@ -15,12 +17,9 @@ interface GameAttributes {
   isReplaying?: boolean;
 }
 
-interface GameCreationAttributes extends Optional<GameAttributes, "id"> {}
+interface GameCreationAttributes extends Optional<GameAttributes, 'id'> {}
 
-class Game
-  extends Model<GameAttributes, GameCreationAttributes>
-  implements GameAttributes
-{
+class Game extends Model<GameAttributes, GameCreationAttributes> implements GameAttributes {
   public id!: number;
   public price!: number;
   public startTime!: Date;
@@ -35,6 +34,8 @@ class Game
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  public users!: User[]; // Убедитесь, что тип корректен
 }
 
 Game.init(
@@ -47,14 +48,14 @@ Game.init(
     stadionId: { type: DataTypes.INTEGER },
     isPublic: { type: DataTypes.BOOLEAN, defaultValue: true },
     isReplaying: { type: DataTypes.BOOLEAN, defaultValue: false },
-    uuid: { type: DataTypes.STRING, defaultValue: "" },
+    uuid: { type: DataTypes.STRING, defaultValue: '' },
     groupId: { type: DataTypes.INTEGER },
     creatorId: { type: DataTypes.INTEGER, defaultValue: 0 },
   },
   {
     sequelize,
-    modelName: "Game",
-  }
+    modelName: 'Game',
+  },
 );
 
 export default Game;

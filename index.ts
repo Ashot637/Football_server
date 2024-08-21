@@ -1,23 +1,19 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
-import { Server, type Socket } from "socket.io";
+import { Server, type Socket } from 'socket.io';
 
-import express, {
-  type NextFunction,
-  type Request,
-  type Response,
-} from "express";
-import http from "http";
-import https from "https";
-import sequelize from "./src/db";
-import bodyParser from "body-parser";
-import cors from "cors";
-import path from "path";
-import fs from "fs";
-import jwt, { type GetPublicKeyOrSecret, type Secret } from "jsonwebtoken";
-import fileUpload from "express-fileupload";
-import errorHandler from "./src/middlewares/errorHandler";
+import express, { type NextFunction, type Request, type Response } from 'express';
+import http from 'http';
+import https from 'https';
+import sequelize from './src/db';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import jwt, { type GetPublicKeyOrSecret, type Secret } from 'jsonwebtoken';
+import fileUpload from 'express-fileupload';
+import errorHandler from './src/middlewares/errorHandler';
 import {
   GameRouter,
   StadionRouter,
@@ -25,23 +21,23 @@ import {
   FacilitieRouter,
   MessageRouter,
   GroupRouter,
-} from "./src/routes";
-import { Invitation } from "./src/models";
+} from './src/routes';
+import { Invitation } from './src/models';
 
-import { groupsSocket, userSockets } from "./src/sockets/userSockets";
+import { groupsSocket, userSockets } from './src/sockets/userSockets';
 
-import DeviceDetector from "node-device-detector";
+import DeviceDetector from 'node-device-detector';
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static(path.resolve(__dirname, "src", "static")));
-app.use(express.static(path.resolve(__dirname, "src", "public")));
+app.use(express.static(path.resolve(__dirname, 'src', 'static')));
+app.use(express.static(path.resolve(__dirname, 'src', 'public')));
 app.use(fileUpload({}));
 
-app.set("trust proxy", true);
+app.set('trust proxy', true);
 
 const detector = new DeviceDetector({
   clientIndexes: true,
@@ -51,9 +47,9 @@ const detector = new DeviceDetector({
   deviceInfo: false,
   maxUserAgentSize: 500,
 });
-app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
+app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const ipAddress = req.headers["x-forwarded-for"] as string;
+    const ipAddress = req.headers['x-forwarded-for'] as string;
     const { token } = req.query;
 
     if (!token) {
@@ -62,11 +58,11 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
 
     const decoded: any = jwt.verify(
       token as string,
-      process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret
+      process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret,
     );
 
     if (!ipAddress || !decoded) {
-      return res.status(400).json({ success: false, message: "Invalid link" });
+      return res.status(400).json({ success: false, message: 'Invalid link' });
     }
 
     const invitation = await Invitation.findOne({
@@ -82,46 +78,46 @@ app.get("/ip", async (req: Request, res: Response, next: NextFunction) => {
       Invitation.create({
         ip: ipAddress,
         groupId: decoded.groupId,
-        from: decoded.from ?? "",
+        from: decoded.from ?? '',
         gameId: decoded.gameId,
         type: decoded.type,
       });
     }
 
-    return res.redirect("https://ballhola.page.link/DtUc");
+    return res.redirect('https://ballhola.page.link/DtUc');
   } catch (error) {
     next(error);
   }
 });
-app.use("/api/v2/", UserRouter);
-app.use("/api/v2/", StadionRouter);
-app.use("/api/v2/", GameRouter);
-app.use("/api/v2/", FacilitieRouter);
-app.use("/api/v2/", MessageRouter);
-app.use("/api/v2", GroupRouter);
+app.use('/api/v2/', UserRouter);
+app.use('/api/v2/', StadionRouter);
+app.use('/api/v2/', GameRouter);
+app.use('/api/v2/', FacilitieRouter);
+app.use('/api/v2/', MessageRouter);
+app.use('/api/v2', GroupRouter);
 
 app.use(errorHandler);
 
 const io = new Server(server);
 
-io.on("connection", (socket: Socket) => {
-  socket.on("user-connected", (userId) => {
+io.on('connection', (socket: Socket) => {
+  socket.on('user-connected', (userId) => {
     userSockets.set(userId, socket);
-    console.log(userId + " Connected");
+    console.log(userId + ' Connected');
   });
 
-  socket.on("user-disconnected", (userId) => {
+  socket.on('user-disconnected', (userId) => {
     userSockets.delete(userId);
     groupsSocket.forEach((value, key) => {
       const newArr = value.filter((id: number) => +id === +userId);
       groupsSocket.set(key, newArr);
     });
-    console.log(userId + " Disconnected");
+    console.log(userId + ' Disconnected');
   });
 
-  socket.on("join-group", ({ groupId, userId }) => {
+  socket.on('join-group', ({ groupId, userId }) => {
     socket.join(groupId);
-    console.log("joined to group" + groupId);
+    console.log('joined to group' + groupId);
     if (!groupsSocket.has(groupId)) {
       groupsSocket.set(groupId, [userId]);
     } else {
@@ -129,9 +125,9 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
-  socket.on("leave-group", ({ groupId, userId }) => {
+  socket.on('leave-group', ({ groupId, userId }) => {
     socket.leave(groupId);
-    console.log("leaved from group" + groupId);
+    console.log('leaved from group' + groupId);
     if (groupsSocket.has(groupId)) {
       const currentArray = groupsSocket.get(groupId);
       const newArray = currentArray.filter((id: number) => id !== userId);
@@ -140,14 +136,14 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
-  socket.on("disconnect", () => {});
+  socket.on('disconnect', () => {});
 });
 
 const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync({ alter: true });
-    server.listen(process.env.PORT || 8080, () => console.log("Server OK"));
+    server.listen(process.env.PORT || 8080, () => console.log('Server OK'));
   } catch (e) {
     console.log(e);
   }

@@ -1,7 +1,5 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
-import User from './User.model';
-import UserGame from './UserGame.model'; // Убедитесь, что импортируете UserGame
 
 interface GameAttributes {
   id: number;
@@ -34,8 +32,6 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-
-  public users!: User[]; // Убедитесь, что тип корректен
 }
 
 Game.init(

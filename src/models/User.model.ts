@@ -1,8 +1,6 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
 import { ROLES } from '../types/Roles';
-import Game from './Game.model';
-import UserGame from './UserGame.model'; // Убедитесь, что импортируете UserGame
 
 interface UserAttributes {
   id: number;
@@ -35,8 +33,6 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-
-  public games!: Game[];
 }
 
 User.init(
@@ -50,7 +46,11 @@ User.init(
     email: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
     address: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
     img: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
-    hasMessage: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
+    hasMessage: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
     role: { type: DataTypes.STRING, defaultValue: 'USER' },
   },
   {

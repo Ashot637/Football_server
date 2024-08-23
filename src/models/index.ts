@@ -19,11 +19,13 @@ Game.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
 User.belongsToMany(Game, {
   through: UserGame,
   foreignKey: 'userId',
+  otherKey: 'gameId',
   as: 'games',
 });
 Game.belongsToMany(User, {
   through: UserGame,
   foreignKey: 'gameId',
+  otherKey: 'userId',
   as: 'users',
 });
 
@@ -40,9 +42,6 @@ Facilitie.belongsToMany(Stadion, {
 
 Game.hasMany(Invitation, { as: 'invitations', foreignKey: 'gameId' });
 Invitation.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
-
-// Game.hasMany(User, { as: 'users', foreignKey: 'gameId' });
-// User.belongsTo(Game, { foreignKey: 'gameId' });
 
 Game.hasOne(GameUniforms, { as: 'uniforms', foreignKey: 'gameId' });
 GameUniforms.belongsTo(Game, { foreignKey: 'gameId' });

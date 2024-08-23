@@ -718,12 +718,16 @@ const getOne = async (
           {
             model: User,
             as: 'users',
+
             include: [
               {
                 model: Game,
                 as: 'games',
                 where: {
                   id,
+                },
+                through: {
+                  attributes: ['willPlay'],
                 },
               },
             ],
@@ -743,9 +747,32 @@ const getOne = async (
           {
             model: Stadion,
             as: 'stadion',
-            include: [{ model: Facilitie, as: 'facilities' }],
+            attributes: [['title_en', 'title'], ['address_en', 'address'], 'title_en', 'id', 'img'],
+            include: [
+              {
+                model: Facilitie,
+                as: 'facilities',
+                attributes: [['title_en', 'title'], 'id', 'img'],
+              },
+            ],
           },
-          { model: User, as: 'users' },
+          {
+            model: User,
+            as: 'users',
+
+            include: [
+              {
+                model: Game,
+                as: 'games',
+                where: {
+                  id,
+                },
+                through: {
+                  attributes: ['willPlay'],
+                },
+              },
+            ],
+          },
           {
             model: GameUniforms,
             as: 'uniforms',
@@ -783,37 +810,35 @@ const getOne = async (
       return res.send({ ...game.toJSON(), ...usersStatistics });
     }
 
-    type UserGame = {
-      willPlay?: boolean;
-    };
+    // const group = await Group.findByPk(game.groupId, {
+    //   include: {
+    //     model: User,
+    //     include: [
+    //       {
+    //         model: Game,
+    //         as: "games",
+    //         where: {
+    //           id: game.id,
+    //         },
+    //       },
+    //     ],
+    //   },
+    // });
 
-    type User = {
-      games: UserGame[];
-    };
-
-    type AccType = {
-      usersWillPlayCount: number;
-      usersWontPlayCount: number;
-    };
-
-    //@ts-ignore
-    const Userss: User[] = await User.findAll({ include: [UserGame] });
-
-    const usersStatistics: AccType = Userss.reduce<AccType>(
-      (acc: AccType, user: User) => {
-        user.games.forEach((game) => {
-          if (game.willPlay === true) {
+    type AccType = { usersWillPlayCount: number; usersWontPlayCount: number };
+    const usersStatistics: AccType =
+      //@ts-ignore
+      game.users.reduce(
+        (acc: AccType, user: User) => {
+          //@ts-ignore
+          if (user.games[0].UserGame.willPlay) {
             acc.usersWillPlayCount++;
-          } else if (game.willPlay === false) {
-            acc.usersWontPlayCount++;
-          }
-        });
-        return acc;
-      },
-      { usersWillPlayCount: 0, usersWontPlayCount: 0 },
-    );
-
-    console.log(usersStatistics);
+            //@ts-ignore
+          } else if (user.games[0].UserGame.willPlay === false) acc.usersWontPlayCount++;
+          return acc;
+        },
+        { usersWillPlayCount: 0, usersWontPlayCount: 0 },
+      );
 
     const users = (game.toJSON() as Game & { users: User[] }).users.map((user) => ({
       ...user,

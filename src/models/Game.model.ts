@@ -3,7 +3,8 @@ import sequelize from '../db';
 
 interface GameAttributes {
   id: number;
-  price: number;
+  priceOneHour?: number;
+  priceOneHourAndHalf?: number;
   startTime: Date;
   endTime: Date;
   maxPlayersCount: number;
@@ -19,7 +20,8 @@ interface GameCreationAttributes extends Optional<GameAttributes, 'id'> {}
 
 class Game extends Model<GameAttributes, GameCreationAttributes> implements GameAttributes {
   public id!: number;
-  public price!: number;
+  public priceOneHour?: number;
+  public priceOneHourAndHalf?: number;
   public startTime!: Date;
   public endTime!: Date;
   public maxPlayersCount!: number;
@@ -37,7 +39,8 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
 Game.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    price: { type: DataTypes.INTEGER },
+    priceOneHour: { type: DataTypes.INTEGER },
+    priceOneHourAndHalf: { type: DataTypes.INTEGER },
     startTime: { type: DataTypes.DATE },
     endTime: { type: DataTypes.DATE },
     maxPlayersCount: { type: DataTypes.INTEGER },

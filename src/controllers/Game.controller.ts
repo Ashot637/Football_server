@@ -43,7 +43,8 @@ function scheduleTask(callback: () => void, id: string) {
 }
 
 interface CreateRequest {
-  price: number;
+  priceOneHour: number;
+  priceOneHourAndHalf: number;
   startTime: Date;
   endTime: Date;
   maxPlayersCount: number;
@@ -54,7 +55,7 @@ interface CreateRequest {
 
 const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
   try {
-    const { price, startTime, endTime, maxPlayersCount, stadionId, uniforms } = req.body;
+    const { priceOneHour, priceOneHourAndHalf, startTime, endTime, maxPlayersCount, stadionId, uniforms } = req.body;
 
     const group = await Group.create({
       ownerId: -1,
@@ -62,8 +63,10 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
       forPublic: true,
     });
 
+
     const game = await Game.create({
-      price,
+      priceOneHour,
+      priceOneHourAndHalf,
       startTime,
       endTime,
       maxPlayersCount,
@@ -90,7 +93,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
     }
     const { id: userId } = req.user;
     const { language } = req.query;
-    const { groupId, price, startTime, endTime, stadionId, range, uniforms } = req.body;
+    const { priceOneHour, priceOneHourAndHalf, groupId, startTime, endTime, stadionId, range, uniforms } = req.body;
 
     let game: Game | undefined;
     let games: Game[] | undefined;
@@ -98,7 +101,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
     const gameUuid = uuid.v4();
     if (range === 1) {
       game = await Game.create({
-        price: price || 0,
+        priceOneHour,
+        priceOneHourAndHalf,
         startTime,
         endTime,
         maxPlayersCount: 99,
@@ -119,7 +123,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
     } else if (range === 4) {
       games = await Game.bulkCreate([
         {
-          price: price || 0,
+          priceOneHour,
+          priceOneHourAndHalf, 
           startTime,
           endTime,
           maxPlayersCount: 99,
@@ -133,7 +138,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         {
           startTime: dayjs(startTime).add(1, 'week').toDate(),
           endTime: dayjs(endTime).add(1, 'week').toDate(),
-          price: price || 0,
+          priceOneHour,
+          priceOneHourAndHalf,
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
@@ -145,7 +151,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         {
           startTime: dayjs(startTime).add(2, 'week').toDate(),
           endTime: dayjs(endTime).add(2, 'week').toDate(),
-          price: price || 0,
+          priceOneHour,
+          priceOneHourAndHalf,
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
@@ -157,7 +164,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         {
           startTime: dayjs(startTime).add(3, 'week').toDate(),
           endTime: dayjs(endTime).add(3, 'week').toDate(),
-          price: price || 0,
+          priceOneHour,
+          priceOneHourAndHalf,
           maxPlayersCount: 99,
           stadionId,
           isPublic: false,
@@ -189,7 +197,8 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
           return;
         }
         const game = await Game.create({
-          price: lastGame.price,
+          priceOneHour: lastGame.priceOneHour,
+          priceOneHourAndHalf: lastGame.priceOneHourAndHalf,
           startTime: dayjs(lastGame.startTime).add(1, 'week').toDate(),
           endTime: dayjs(lastGame.endTime).add(1, 'week').toDate(),
           maxPlayersCount: lastGame.maxPlayersCount,
@@ -928,7 +937,7 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId, role } = req.user;
-    const { price, startTime, endTime, maxPlayersCount, stadionId, uniforms, isReplaying } =
+    const { priceOneHour, priceOneHourAndHalf, startTime, endTime, maxPlayersCount, stadionId, uniforms, isReplaying } =
       req.body;
     const { id } = req.params;
 
@@ -937,7 +946,8 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
     if (role === ROLES.ADMIN || role === ROLES.STADION_OWNER) {
       result = await Game.update(
         {
-          price,
+          priceOneHour,
+          priceOneHourAndHalf,
           startTime,
           endTime,
           maxPlayersCount,
@@ -974,7 +984,8 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
         }
         result = await Game.update(
           {
-            price,
+            priceOneHour,
+            priceOneHourAndHalf,
             startTime,
             endTime,
             maxPlayersCount,
@@ -1039,7 +1050,8 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
       } else {
         result = await Game.update(
           {
-            price,
+            priceOneHour,
+            priceOneHourAndHalf,
             startTime,
             endTime,
             maxPlayersCount,

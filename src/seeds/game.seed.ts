@@ -1,23 +1,23 @@
 import { Game, Group } from '../models';
 
-const games = [
-  {
-    startTime: new Date(Date.now() + 1000000000),
-    endTime: new Date(Date.now() + 1000000000 + 5400000),
-    maxPlayersCount: 14,
-    stadionId: 1,
-    price: 3000,
-    groupId: 1,
-  },
-  {
-    startTime: new Date(Date.now() + 1500000000),
-    endTime: new Date(Date.now() + 1500000000 + 5400000),
-    maxPlayersCount: 16,
-    stadionId: 1,
-    price: 5000,
-    groupId: 1,
-  },
-] as Game[];
+// const games = [
+//   {
+//     startTime: new Date(Date.now() + 1000000000),
+//     endTime: new Date(Date.now() + 1000000000 + 5400000),
+//     maxPlayersCount: 14,
+//     stadionId: 1,
+//     price: 3000,
+//     groupId: 1,
+//   },
+//   {
+//     startTime: new Date(Date.now() + 1500000000),
+//     endTime: new Date(Date.now() + 1500000000 + 5400000),
+//     maxPlayersCount: 16,
+//     stadionId: 1,
+//     price: 5000,
+//     groupId: 1,
+//   },
+// ] as Game[];
 
 export default () => {
   // Group.create({

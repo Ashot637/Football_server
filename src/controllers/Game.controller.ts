@@ -875,7 +875,8 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
           gameId: ids,
         },
       });
-      await UserGame.destroy({});
+      // Use truncate to clear all records if that's the intention
+      await UserGame.destroy({ truncate: true, restartIdentity: true });
     } else {
       const game = await Game.findByPk(ids[0]);
       if (!game) {

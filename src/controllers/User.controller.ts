@@ -207,7 +207,7 @@ const generateUserCode = async (req: Request, res: Response, next: NextFunction)
     await sendMessageToNumber(phone, String(code));
 
     return res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     if (isAxiosError(error)) {
       console.log(error.response?.data);
     }

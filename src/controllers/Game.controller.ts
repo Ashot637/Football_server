@@ -55,14 +55,21 @@ interface CreateRequest {
 
 const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
   try {
-    const { priceOneHour, priceOneHourAndHalf, startTime, endTime, maxPlayersCount, stadionId, uniforms } = req.body;
+    const {
+      priceOneHour,
+      priceOneHourAndHalf,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      uniforms,
+    } = req.body;
 
     const group = await Group.create({
       ownerId: -1,
       title: 'Public',
       forPublic: true,
     });
-
 
     const game = await Game.create({
       priceOneHour,
@@ -93,7 +100,16 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
     }
     const { id: userId } = req.user;
     const { language } = req.query;
-    const { priceOneHour, priceOneHourAndHalf, groupId, startTime, endTime, stadionId, range, uniforms } = req.body;
+    const {
+      priceOneHour,
+      priceOneHourAndHalf,
+      groupId,
+      startTime,
+      endTime,
+      stadionId,
+      range,
+      uniforms,
+    } = req.body;
 
     let game: Game | undefined;
     let games: Game[] | undefined;
@@ -124,7 +140,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
       games = await Game.bulkCreate([
         {
           priceOneHour,
-          priceOneHourAndHalf, 
+          priceOneHourAndHalf,
           startTime,
           endTime,
           maxPlayersCount: 99,
@@ -938,8 +954,16 @@ const update = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId, role } = req.user;
-    const { priceOneHour, priceOneHourAndHalf, startTime, endTime, maxPlayersCount, stadionId, uniforms, isReplaying } =
-      req.body;
+    const {
+      priceOneHour,
+      priceOneHourAndHalf,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      uniforms,
+      isReplaying,
+    } = req.body;
     const { id } = req.params;
 
     let result: [number, Game[]];

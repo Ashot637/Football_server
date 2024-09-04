@@ -4,7 +4,7 @@ export const sendMessageToNumber = async (phoneNumber: string, message: string) 
   const { data } = await axios.get('https://api.fortis-tele.com/api/SendSMS', {
     params: {
       api_id: process.env.MESSAGE_PROVIDER_API_ID,
-      api_password: process.env.MESSAGE_PROVIDER_API_PASSWORD,
+      api_password: `y"EnaM!Z6L`,
       sms_type: 'T',
       encoding: 'T',
       sender_id: process.env.MESSAGE_PROVIDER_SENDER_ID,

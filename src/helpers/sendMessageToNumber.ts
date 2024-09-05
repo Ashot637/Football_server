@@ -14,8 +14,14 @@ export const sendMessageToNumber = async (phoneNumber: string, message: string) 
     },
     {
       headers: {
-        Accept: 'application/json',
+        'Postman-Token': '<calculated when request is sent>', // This is usually dynamically generated and may not be needed.
+        'Content-Type': 'application/json',
+        'Content-Length': '<calculated when request is sent>', // Usually set automatically by axios.
+        Host: '<calculated when request is sent>', // Also set automatically.
+        'User-Agent': 'PostmanRuntime/7.41.2', // You can set this to something custom if needed.
+        Accept: '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
+        Connection: 'keep-alive',
       },
     },
   );

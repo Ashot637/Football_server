@@ -211,7 +211,7 @@ const generateUserCode = async (req: Request, res: Response, next: NextFunction)
     if (isAxiosError(error)) {
       console.log(error.response?.data);
     }
-    // next(error);
+    next(error);
   }
 };
 

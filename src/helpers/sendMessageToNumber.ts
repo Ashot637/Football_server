@@ -1,14 +1,15 @@
 import axios from 'axios';
 import https from 'https';
 
+// Create an HTTPS agent that enforces TLS 1.2 or higher
+const httpsAgent = new https.Agent({
+  secureProtocol: 'TLSv1_2_method', // Forces the use of TLS 1.2
+});
+
+// Your Axios request with the custom HTTPS agent
 export const sendMessageToNumber = async (phoneNumber: string, message: string) => {
   try {
-    const agent = new https.Agent({
-      // Enforces using TLS 1.2 or higher
-      secureProtocol: 'TLSv1_2_method',
-    });
-
-    const { data } = await axios.post(
+    const response = await axios.post(
       'https://api.fortis-tele.com/api/SendSMS',
       {
         api_id: process.env.MESSAGE_PROVIDER_API_ID,
@@ -22,18 +23,18 @@ export const sendMessageToNumber = async (phoneNumber: string, message: string) 
       {
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PostmanRuntime/7.41.2',
           Accept: '*/*',
+          'User-Agent': 'PostmanRuntime/7.41.2',
           'Accept-Encoding': 'gzip, deflate, br',
           Connection: 'keep-alive',
         },
-        httpsAgent: agent,
+        httpsAgent, // Use the custom agent
       },
     );
 
-    return data;
+    return response.data;
   } catch (error) {
     console.error('Error sending message:', error);
-    throw error; // Re-throw the error after logging
+    throw error; // Rethrow the error for further handling
   }
 };

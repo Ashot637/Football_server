@@ -149,7 +149,7 @@ const getAllForUser = async (req: Request, res: Response, next: NextFunction) =>
 };
 
 const search = async (req: Request, res: Response, next: NextFunction) => {
-  let { term, language = 'am' } = req.query;
+  let { term, language } = req.query;
   term = term || '';
   try {
     const stadions = await Stadion.findAll({

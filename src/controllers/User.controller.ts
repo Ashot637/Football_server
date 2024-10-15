@@ -77,6 +77,10 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
     const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, {
       expiresIn: '7d',
     });
+    console.log('====================================');
+    console.log(accessToken);
+
+    console.log('====================================');
 
     if (user.role === ROLES.ADMIN || user.role === ROLES.STADION_OWNER) {
       return res.send({

@@ -664,7 +664,7 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
-    const { language = 'am' } = req.query;
+    const { language } = req.query;
 
     const notifications = await Notification.findAll({
       where: {

@@ -703,7 +703,8 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
         },
       },
     );
-    console.log(req);
+    console.log(req.url);
+
     return res.send(notifications);
   } catch (error) {
     next(error);

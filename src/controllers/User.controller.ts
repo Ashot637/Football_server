@@ -418,7 +418,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     console.log(expoPushToken);
     console.log('===================================================');
-    //hjee
+
     const user = await User.findByPk(id, {
       include: [{ model: Game, as: 'games' }],
     });

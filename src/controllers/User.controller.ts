@@ -416,7 +416,7 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     );
     console.log('===================================================');
 
-    console.log(expoPushToken);
+    console.log(expoPushToken, 'asdasdasdsad');
     console.log('===================================================');
 
     const user = await User.findByPk(id, {

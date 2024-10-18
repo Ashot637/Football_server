@@ -190,10 +190,8 @@ async function sendPushNotifications(pushTokens: string[], message: string): Pro
     }
   }
 }
-
-// Пример использования
-const pushTokens: string[] = ['ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]']; // список Expo push токенов
-const message: string = 'Ваше уведомление пришло!';
+let pushTokens;
+let message;
 
 // Вызов функции
 sendPushNotifications(pushTokens, message).catch((error) => {

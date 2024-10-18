@@ -176,7 +176,7 @@ async function sendPushNotifications(pushTokens: string[], message: string): Pro
     }
   }
 }
-const pushTokens: string[] = ['ExponentPushToken[UPzhPLH9Q7PlGJhd8b4Q0o]']; // список Expo push токенов
+const pushTokens: string[] = ['ExponentPushToken[KSlO3sLoZdSUO1slxtwBTI]']; // список Expo push токенов
 const message: string = 'Ваше уведомление пришло!';
 // Пример использования
 

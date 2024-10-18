@@ -141,20 +141,6 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {});
 });
 
-const start = async () => {
-  try {
-    await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
-    server.listen(process.env.PORT || 8080, () => console.log('Server OK'));
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-// Создайте экземпляр Expo SDK
-const expo = new Expo();
-
-// Функция для отправки push-уведомлений
 async function sendPushNotifications(pushTokens: string[], message: string): Promise<void> {
   // Создайте массив для сообщений
   let messages: ExpoPushMessage[] = [];
@@ -190,8 +176,8 @@ async function sendPushNotifications(pushTokens: string[], message: string): Pro
     }
   }
 }
-let pushTokens;
-let message;
+
+// Пример использования
 
 // Вызов функции
 sendPushNotifications(pushTokens, message).catch((error) => {
@@ -213,6 +199,20 @@ app.post('/send-notification', async (req: Request, res: Response) => {
     res.status(500).send('Error sending notifications');
   }
 });
+const start = async () => {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync({ alter: true });
+    server.listen(process.env.PORT || 8080, () => console.log('Server OK'));
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+// Создайте экземпляр Expo SDK
+const expo = new Expo();
+
+// Функция для отправки push-уведомлений
 
 start();
 

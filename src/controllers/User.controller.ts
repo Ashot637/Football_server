@@ -414,6 +414,10 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       },
       { where: { id } },
     );
+    console.log('===================================================');
+
+    console.log(expoPushToken);
+    console.log('===================================================');
 
     const user = await User.findByPk(id, {
       include: [{ model: Game, as: 'games' }],

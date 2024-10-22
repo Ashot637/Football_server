@@ -97,7 +97,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
           include: [
             {
               model: User,
-              as: 'users',
+              as: 'users', // Этот alias должен совпадать с определенным в модели UserGame
             },
           ],
         });

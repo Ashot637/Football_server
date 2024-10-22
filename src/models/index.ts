@@ -28,6 +28,10 @@ Game.belongsToMany(User, {
   otherKey: 'userId',
   as: 'users',
 });
+UserGame.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'users', // Дайте имя для этой ассоциации
+});
 
 Stadion.belongsToMany(Facilitie, {
   through: StadionFacilitie,

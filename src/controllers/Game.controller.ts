@@ -98,7 +98,7 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
           include: [
             {
               model: User,
-              // as: 'users',
+              as: 'users',
             },
           ],
         });

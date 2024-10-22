@@ -98,18 +98,20 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
           include: [
             {
               model: User,
-              as: 'users',
+              as: 'users', // используйте правильную ассоциацию
             },
           ],
         });
 
-        if (!userGame) return;
+        if (userGame.length === 0) return; // проверка на наличие пользователей
 
         const userTokens = (userGame as unknown as { users: User[] }).users.map(
           (user) => user.expoPushToken,
-        ) as string[];
+        ) as string[]; // отфильтровываем возможные undefined значения
 
-        await sendPushNotifications(userTokens, 'Игра начнется через 30 минут!');
+        if (userTokens.length > 0) {
+          await sendPushNotifications(userTokens, 'Игра начнется через 30 минут!');
+        }
       } catch (error) {
         console.error('Ошибка при отправке уведомлений:', error);
       }

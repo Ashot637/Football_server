@@ -1,5 +1,6 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import User from './User.model';
 
 interface GameAttributes {
   id: number;
@@ -14,6 +15,7 @@ interface GameAttributes {
   uuid: string;
   creatorId?: number;
   isReplaying?: boolean;
+  users?: User[];
 }
 
 interface GameCreationAttributes extends Optional<GameAttributes, 'id'> {}
@@ -34,6 +36,7 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public users?: User[];
 }
 
 Game.init(

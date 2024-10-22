@@ -93,11 +93,12 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
 
     cron.schedule(taskTime, async () => {
       try {
-        const userGame = await UserGame.findByPk(game.id, {
+        const userGame = await UserGame.findAll({
+          where: { gameId: game.id },
           include: [
             {
               model: User,
-              as: 'users', // Этот alias должен совпадать с определенным в модели UserGame
+              as: 'users',
             },
           ],
         });

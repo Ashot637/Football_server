@@ -146,6 +146,7 @@ async function sendPushNotifications(pushTokens: string[], message: string): Pro
   let messages: ExpoPushMessage[] = [];
 
   // Пройдитесь по каждому токену
+  const expo = new Expo();
   for (let pushToken of pushTokens) {
     // Проверьте, является ли это валидным Expo push токеном
     if (!Expo.isExpoPushToken(pushToken)) {
@@ -212,7 +213,6 @@ const start = async () => {
 };
 
 // Создайте экземпляр Expo SDK
-const expo = new Expo();
 
 // Функция для отправки push-уведомлений
 

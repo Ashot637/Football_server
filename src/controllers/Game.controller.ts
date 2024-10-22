@@ -20,11 +20,12 @@ import { INVITATION_TYPES } from '../models/Invitation.model';
 import literalPlayersCount from '../helpers/literalPlayersCount';
 import * as uuid from 'uuid';
 import cron, { type ScheduledTask } from 'node-cron';
+import sendPushNotifications from '../helpers/sendPushNotification';
 
 const cronExpressions: Map<string, ScheduledTask> = new Map();
 
 function scheduleTask(callback: () => void, id: string) {
-  // const now = new Date();
+  const now = new Date();
 
   // const hour = now.getHours();
   // const minute = now.getMinutes();
@@ -85,6 +86,32 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
     await GameUniforms.create({
       gameId: game.id,
       indexes: uniforms,
+    });
+
+    const notificationTime = dayjs(game.startTime).subtract(30, 'minute').toDate();
+    const taskTime = dayjs(notificationTime).format('m H D M *');
+
+    cron.schedule(taskTime, async () => {
+      try {
+        const userGame = await UserGame.findByPk(game.id, {
+          include: [
+            {
+              model: User,
+              as: 'users',
+            },
+          ],
+        });
+
+        if (!userGame) return;
+
+        const userTokens = (userGame as unknown as { users: User[] }).users.map(
+          (user) => user.expoPushToken,
+        ) as string[];
+
+        await sendPushNotifications(userTokens, 'Игра начнется через 30 минут!');
+      } catch (error) {
+        console.error('Ошибка при отправке уведомлений:', error);
+      }
     });
 
     return res.send(game);

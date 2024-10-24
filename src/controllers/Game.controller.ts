@@ -101,27 +101,14 @@ const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: 
             },
           ],
         });
-        // const userGame = await UserGame.findAll({
-        //   where: { gameId: game.id },
-        //   include: [
-        //     {
-        //       model: User,
-        //       as: 'users', // используйте правильную ассоциацию
-        //     },
-        //   ],
-        // });
+
         if (!games || !games.users) return;
         const userTokens = games.users
           .map((user) => user.expoPushToken)
           .filter((token): token is string => token !== undefined);
 
-        // if (userGame.length === 0) return; // проверка на наличие пользователей
-        //     = userGames
-        // .map((userGame) => userGame.user?.expoPushToken) // Используйте оператор опциональной цепочки
-        // .filter(Boolean); // Удаление undefined значений
-
         if (userTokens.length > 0) {
-          await sendPushNotifications(userTokens, 'Игра начнется через 30 минут!');
+          await sendPushNotifications(userTokens, 'The game will start in 30 minutes!');
         }
       } catch (error) {
         console.error('Ошибка при отправке уведомлений:', error);

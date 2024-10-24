@@ -29,6 +29,7 @@ import { groupsSocket, userSockets } from './src/sockets/userSockets';
 import DeviceDetector from 'node-device-detector';
 
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import sendPushNotifications from './src/helpers/sendPushNotification';
 
 const app = express();
 const server = http.createServer(app);
@@ -141,67 +142,6 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {});
 });
 
-async function sendPushNotifications(pushTokens: string[], message: string): Promise<void> {
-  // Создайте массив для сообщений
-  let messages: ExpoPushMessage[] = [];
-
-  // Пройдитесь по каждому токену
-  const expo = new Expo();
-  for (let pushToken of pushTokens) {
-    // Проверьте, является ли это валидным Expo push токеном
-    if (!Expo.isExpoPushToken(pushToken)) {
-      console.error(`Push token ${pushToken} is not a valid Expo push token`);
-      continue;
-    }
-
-    // Создайте сообщение для каждого токена
-    messages.push({
-      to: pushToken,
-      sound: 'default',
-      body: message,
-      data: { withSome: 'data' },
-    });
-  }
-
-  // Разбейте сообщения на чанки
-  let chunks = expo.chunkPushNotifications(messages);
-  let tickets: ExpoPushTicket[] = [];
-
-  // Отправляйте уведомления партиями
-  for (let chunk of chunks) {
-    try {
-      let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-      tickets.push(...ticketChunk);
-    } catch (error) {
-      console.error('Error sending push notifications', error);
-    }
-  }
-}
-const pushTokens: string[] = ['ExponentPushToken[KSlO3sLoZdSUO1slxtwBTI]'];
-// список Expo push токенов
-const message: string = 'Ваше уведомление пришло!';
-// Пример использования
-
-// Вызов функции
-sendPushNotifications(pushTokens, message).catch((error) => {
-  console.error('Error in sending push notifications', error);
-});
-
-app.post('/send-notification', async (req: Request, res: Response) => {
-  const { pushTokens, message } = req.body;
-
-  if (!pushTokens || !message) {
-    return res.status(400).send('Invalid request: missing pushTokens or message');
-  }
-
-  try {
-    await sendPushNotifications(pushTokens, message);
-    res.status(200).send('Notifications sent successfully');
-  } catch (error) {
-    console.error('Error sending notifications:', error);
-    res.status(500).send('Error sending notifications');
-  }
-});
 const start = async () => {
   try {
     await sequelize.authenticate();
@@ -211,10 +151,6 @@ const start = async () => {
     console.log(e);
   }
 };
-
-// Создайте экземпляр Expo SDK
-
-// Функция для отправки push-уведомлений
 
 start();
 

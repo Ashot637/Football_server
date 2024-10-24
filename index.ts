@@ -142,7 +142,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {});
 });
 
-async function sendPushNotifications(pushTokens: string[], message: string): Promise<void> {
+async function sendPushNotification(pushTokens: string[], message: string): Promise<void> {
   // Создайте массив для сообщений
   let messages: ExpoPushMessage[] = [];
 
@@ -183,8 +183,7 @@ const pushTokens: string[] = ['ExponentPushToken[KSlO3sLoZdSUO1slxtwBTI]'];
 const message: string = 'Ваше уведомление пришло!';
 // Пример использования
 
-// Вызов функции
-sendPushNotifications(pushTokens, message).catch((error) => {
+sendPushNotification(pushTokens, message).catch((error) => {
   console.error('Error in sending push notifications', error);
 });
 
@@ -196,7 +195,7 @@ app.post('/send-notification', async (req: Request, res: Response) => {
   }
 
   try {
-    await sendPushNotifications(pushTokens, message);
+    await sendPushNotification(pushTokens, message);
     res.status(200).send('Notifications sent successfully');
   } catch (error) {
     console.error('Error sending notifications:', error);

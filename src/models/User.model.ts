@@ -1,5 +1,6 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import Game from './Game.model';
 import { ROLES } from '../types/Roles';
 
 interface UserAttributes {
@@ -14,6 +15,7 @@ interface UserAttributes {
   hasMessage?: boolean;
   role: ROLES;
   ip: string;
+  games?: Game[];
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}

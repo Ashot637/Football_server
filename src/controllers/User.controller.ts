@@ -728,7 +728,10 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
         };
       }) as unknown as Invitation[];
     }
-  } catch (error) {}
+    return res.status(200).send(invitations);
+  } catch (error) {
+    next(error);
+  }
 };
 export default {
   register,

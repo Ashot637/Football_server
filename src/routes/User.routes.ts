@@ -29,9 +29,5 @@ router.get(
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   UserController.getAllNotifications,
 );
-router.get(
-  '/invitations/getAll',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  UserController.getAllInvitations,
-);
+router.get('/invitations/getAll', UserController.getAllInvitations);
 export default router;

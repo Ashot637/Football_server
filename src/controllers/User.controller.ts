@@ -663,16 +663,13 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
 };
 const getAllInvitations = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
-    const { language, token } = req.query;
+    const { language } = req.query;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    // const { id: userId } = req.user;
-    const user = await User.findOne({
-      where: { expoPushToken: Array.isArray(token) ? token[0] : (token as string) },
-    });
-    // const user = await User.findByPk(userId);
+    const { id: userId } = req.user;
+    const user = await User.findByPk(userId);
 
     if (!user) {
       return res.status(409).json({ success: false });

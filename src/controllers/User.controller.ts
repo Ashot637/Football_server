@@ -98,64 +98,11 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
         isNew: true,
       },
     });
-    let invitations = await Invitation.findAll({
-      where: {
-        ip: user.ip,
-      },
-    });
-
-    const ids = invitations.map((x) => x.groupId);
-
-    const games = await Game.findAll({
-      where: {
-        groupId: ids,
-        startTime: {
-          [Op.gt]: new Date(),
-        },
-      },
-      include: [
-        {
-          model: Stadion,
-          as: 'stadion',
-          attributes: [[`title_${language}`, `title`]],
-        },
-      ],
-    });
-
-    if (games?.length) {
-      invitations = invitations.map((invitation) => {
-        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-          dataValues: { stadion: { dataValues: { title: string } } };
-          startTime: string;
-        };
-        if (
-          // @ts-ignore
-          user.dataValues.games.find(
-            // @ts-ignore
-            (g) => g.groupId === game.groupId,
-          )
-        ) {
-          return {
-            ...invitation.dataValues,
-            stadion: game.dataValues.stadion.dataValues.title,
-            startTime: game.startTime,
-            hasGame: true,
-            gameId: game.id,
-          };
-        }
-        return {
-          ...invitation.dataValues,
-          stadion: game.dataValues.stadion.dataValues.title,
-          startTime: game.startTime,
-          hasGame: false,
-        };
-      }) as unknown as Invitation[];
-    }
 
     return res.send({
       ...user.dataValues,
       accessToken,
-      invitations,
+      // invitations,
       notifications,
     });
   } catch (error) {
@@ -714,7 +661,75 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
     next(error);
   }
 };
+const getAllInvitations = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const { language } = req.query;
 
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(409).json({ success: false });
+    }
+
+    let invitations = await Invitation.findAll({
+      where: {
+        ip: user.ip,
+      },
+    });
+
+    const ids = invitations.map((x) => x.groupId);
+
+    const games = await Game.findAll({
+      where: {
+        groupId: ids,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: Stadion,
+          as: 'stadion',
+          attributes: [[`title_${language}`, `title`]],
+        },
+      ],
+    });
+
+    if (games?.length) {
+      invitations = invitations.map((invitation) => {
+        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
+          dataValues: { stadion: { dataValues: { title: string } } };
+          startTime: string;
+        };
+        if (
+          // @ts-ignore
+          user.dataValues.games.find(
+            // @ts-ignore
+            (g) => g.groupId === game.groupId,
+          )
+        ) {
+          return {
+            ...invitation.dataValues,
+            stadion: game.dataValues.stadion.dataValues.title,
+            startTime: game.startTime,
+            hasGame: true,
+            gameId: game.id,
+          };
+        }
+        return {
+          ...invitation.dataValues,
+          stadion: game.dataValues.stadion.dataValues.title,
+          startTime: game.startTime,
+          hasGame: false,
+        };
+      }) as unknown as Invitation[];
+    }
+  } catch (error) {}
+};
 export default {
   register,
   login,
@@ -732,4 +747,5 @@ export default {
   changePassword,
   getAllNotifications,
   // updateStatus,
+  getAllInvitations,
 };

@@ -669,7 +669,12 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      include: {
+        model: Game,
+        as: 'games',
+      },
+    });
 
     if (!user) {
       return res.status(409).json({ success: false });
@@ -701,20 +706,12 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
 
     if (games?.length) {
       invitations = invitations.map((invitation) => {
-        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-          dataValues: { stadion: { dataValues: { title: string } } };
-          startTime: string;
-        };
-        if (
-          // @ts-ignore
-          user.dataValues.games.find(
-            // @ts-ignore
-            (g) => g.groupId === game.groupId,
-          )
-        ) {
+        const game = games.find((game) => game.groupId === invitation.groupId);
+        if (!game) return null;
+        if (user.dataValues.games!.find((g) => g.groupId === game.groupId)) {
           return {
             ...invitation.dataValues,
-            stadion: game.dataValues.stadion.dataValues.title,
+            stadion: game.dataValues.stadion!.dataValues.title,
             startTime: game.startTime,
             hasGame: true,
             gameId: game.id,
@@ -722,13 +719,13 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
         }
         return {
           ...invitation.dataValues,
-          stadion: game.dataValues.stadion.dataValues.title,
+          stadion: game.dataValues.stadion!.dataValues.title,
           startTime: game.startTime,
           hasGame: false,
         };
       }) as unknown as Invitation[];
     }
-    return res.status(200).send(invitations);
+    return res.status(204).send(invitations.filter(Boolean));
   } catch (error) {
     next(error);
   }

@@ -1,6 +1,7 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
 import User from './User.model';
+import Stadion from './Stadion.model';
 
 interface GameAttributes {
   id: number;
@@ -16,6 +17,8 @@ interface GameAttributes {
   creatorId?: number;
   isReplaying?: boolean;
   users?: User[];
+  games?: Game[];
+  stadion?: Stadion;
 }
 
 interface GameCreationAttributes extends Optional<GameAttributes, 'id'> {}

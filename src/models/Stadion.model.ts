@@ -7,6 +7,7 @@ interface StadionAttributes {
   title_en: string;
   title_ru: string;
   title_am: string;
+  title?: string;
   address_en: string;
   address_ru: string;
   address_am: string;

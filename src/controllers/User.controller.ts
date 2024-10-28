@@ -725,7 +725,7 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
         };
       }) as unknown as Invitation[];
     }
-    return res.status(204).send(invitations.filter(Boolean));
+    return res.send(invitations.filter(Boolean));
   } catch (error) {
     next(error);
   }

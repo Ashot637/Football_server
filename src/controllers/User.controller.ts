@@ -408,37 +408,14 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
       ],
     });
 
-    const userGroups = await UserGroup.findAll({
-      where: {
-        userId: id,
-      },
-    });
-
-    invitations = invitations.map((invitation) => {
-      if (invitation.type === INVITATION_TYPES.GROUP) {
-        if (userGroups.find((group) => group.groupId === invitation.groupId)) {
+    if (games?.length) {
+      invitations = invitations.map((invitation) => {
+        const game = games.find((game) => game.groupId === invitation.groupId);
+        if (!game) return null;
+        if (user.dataValues.games!.find((g) => g.groupId === game.groupId)) {
           return {
             ...invitation.dataValues,
-            hasGroup: true,
-          };
-        }
-        return { ...invitation.dataValues };
-      }
-      if (games.length) {
-        const game = games.find((game) => game.groupId === invitation.groupId) as Game & {
-          dataValues: { stadion: { dataValues: { title: string } } };
-          startTime: string;
-        };
-        if (
-          // @ts-ignore
-          user.dataValues.games.find(
-            // @ts-ignore
-            (g) => g.groupId === game.groupId,
-          )
-        ) {
-          return {
-            ...invitation.dataValues,
-            stadion: game.dataValues.stadion.dataValues.title,
+            stadion: game.dataValues.stadion!.dataValues.title,
             startTime: game.startTime,
             hasGame: true,
             gameId: game.id,
@@ -446,13 +423,13 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
         }
         return {
           ...invitation.dataValues,
-          stadion: game.dataValues.stadion.dataValues.title,
+          stadion: game.dataValues.stadion!.dataValues.title,
           startTime: game.startTime,
           hasGame: false,
         };
-      }
-      return { ...invitation.dataValues };
-    }) as unknown as Invitation[];
+      }) as unknown as Invitation[];
+    }
+    // return res.send();
 
     res.send({ ...user.dataValues, accessToken, invitations, notifications });
   } catch (error) {
@@ -746,6 +723,5 @@ export default {
   checkCode,
   changePassword,
   getAllNotifications,
-  // updateStatus,
   getAllInvitations,
 };

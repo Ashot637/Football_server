@@ -15,7 +15,7 @@ import Notification from './Notification.model';
 import Team from './Team.model';
 import TeamPlayer from './TeamPlayers';
 import TeamGame from './TeamGames.model';
-import Chat from './UserChat.model';
+import Chat from './Chat';
 import UserChat from './UserChat.model';
 
 Stadion.hasMany(Game, { foreignKey: 'stadionId' });
@@ -126,7 +126,7 @@ Chat.belongsToMany(User, {
   through: UserChat,
   foreignKey: 'userId',
 });
-User.belongsToMany(Chat, { through: UserChat, foreignKey: 'teamId' });
+User.belongsToMany(Chat, { through: UserChat, foreignKey: 'chatId' });
 
 export {
   User,

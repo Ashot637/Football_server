@@ -24,8 +24,8 @@ TeamPlayer.init(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: { type: DataTypes.INTEGER, allowNull: false },
     teamId: { type: DataTypes.INTEGER, allowNull: false },
-    playerStatus: { type: DataTypes.STRING, allowNull: false },
-    playerPosition: { type: DataTypes.STRING, allowNull: false },
+    playerStatus: { type: DataTypes.STRING, allowNull: true },
+    playerPosition: { type: DataTypes.STRING, allowNull: true },
   },
   {
     sequelize,

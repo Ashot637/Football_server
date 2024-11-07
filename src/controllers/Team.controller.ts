@@ -47,4 +47,27 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 };
-export default { create, getAll, getUsers };
+
+const addToTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id } = req.user;
+    const { userIds } = req.body;
+    const teamId = await Team.findOne({ where: { userId: id } });
+    const teamPlayers = await TeamPlayer.bulkCreate(
+      userIds.map((id: number) => ({
+        userId: id,
+        teamId,
+        playerPosition: null,
+        playerStatus: null,
+      })),
+    );
+    return res.status(500).json({ success: true, teamPlayers });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { create, getAll, getUsers, addToTeam };

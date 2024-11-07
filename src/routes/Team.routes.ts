@@ -11,4 +11,5 @@ router.post(
 );
 router.get('/team/getAll', checkRole(ROLES.USER), TeamController.getAll);
 router.get('/team/getUsers', checkRole(ROLES.USER), TeamController.getUsers);
+router.post('/team/addMember', checkRole(ROLES.USER), TeamController.addToTeam);
 export default router;

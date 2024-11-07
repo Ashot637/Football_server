@@ -1,27 +1,13 @@
-import { type Request, type Response, type NextFunction } from "express";
-import { type RequestWithUser } from "../types/RequestWithUser";
-import {
-  Game,
-  Group,
-  Notification,
-  Stadion,
-  User,
-  UserGame,
-  UserGroup,
-} from "../models";
-import literalPlayersCount from "../helpers/literalPlayersCount";
-import { Op, literal } from "sequelize";
+import { type Request, type Response, type NextFunction } from 'express';
+import { type RequestWithUser } from '../types/RequestWithUser';
+import { Game, Group, Notification, Stadion, User, UserGame, UserGroup } from '../models';
+import literalPlayersCount from '../helpers/literalPlayersCount';
+import { Op, literal } from 'sequelize';
 
-const getAll = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const getAll = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
     const user = await User.findOne({
@@ -40,16 +26,10 @@ const getAll = async (
   }
 };
 
-const getAllThatUserOwnes = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const getAllThatUserOwnes = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
     const user = await User.findOne({
@@ -59,7 +39,7 @@ const getAllThatUserOwnes = async (
     });
 
     if (!user) {
-      return res.status(404).json({ success: true, message: "User not found" });
+      return res.status(404).json({ success: true, message: 'User not found' });
     }
 
     const groups = await Group.findAll({
@@ -75,16 +55,10 @@ const getAllThatUserOwnes = async (
   }
 };
 
-const getOne = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const getOne = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.params;
     const { language } = req.query;
@@ -106,18 +80,18 @@ const getOne = async (
             },
           },
           required: false,
-          order: [["startTime", "ASC"]],
-          as: "game",
+          order: [['startTime', 'ASC']],
+          as: 'game',
           include: [
             {
               model: Stadion,
-              as: "stadion",
+              as: 'stadion',
               attributes: [
                 [`title_${language}`, `title`],
                 [`address_${language}`, `address`],
-                "title_en",
-                "id",
-                "img",
+                'title_en',
+                'id',
+                'img',
               ],
             },
           ],
@@ -125,9 +99,9 @@ const getOne = async (
             include: [
               [
                 literal(
-                  `(SELECT COUNT(*) FROM "UserGames" WHERE "UserGames"."gameId" = "game"."id" AND "UserGames"."willPlay" = true)`
+                  `(SELECT COUNT(*) FROM "UserGames" WHERE "UserGames"."gameId" = "game"."id" AND "UserGames"."willPlay" = true)`,
                 ),
-                "playersCount",
+                'playersCount',
               ],
             ],
           },
@@ -141,16 +115,10 @@ const getOne = async (
   }
 };
 
-const create = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
     const { title } = req.body;
@@ -168,16 +136,10 @@ const create = async (
   }
 };
 
-const leaveFromGroup = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const leaveFromGroup = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
     const { id } = req.params;
@@ -229,16 +191,10 @@ const leaveFromGroup = async (
   }
 };
 
-const remove = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const remove = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
     const { id } = req.params;
@@ -252,7 +208,7 @@ const remove = async (
     });
 
     if (!deletedRowsCount) {
-      return res.send({ success: false, messages: "Group not found" });
+      return res.send({ success: false, messages: 'Group not found' });
     }
 
     return res.send({ success: true });
@@ -261,16 +217,10 @@ const remove = async (
   }
 };
 
-const joinToGroup = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const joinToGroup = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authenticated" });
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
     const { id, notificationId } = req.body;
@@ -292,6 +242,7 @@ const joinToGroup = async (
         await UserGame.create({
           userId,
           gameId: game.id,
+          goalsCount: 0,
         });
       }
     }

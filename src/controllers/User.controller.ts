@@ -78,7 +78,7 @@ const login = async (req: Request<{}, {}, RegisterRequest>, res: Response, next:
       expiresIn: '7d',
     });
     console.log('====================================');
-    console.log(accessToken);
+    console.log(accessToken, user.expoPushToken);
 
     console.log('====================================');
 

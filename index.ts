@@ -21,6 +21,7 @@ import {
   FacilitieRouter,
   MessageRouter,
   GroupRouter,
+  TeamRouter,
 } from './src/routes';
 import { Invitation } from './src/models';
 
@@ -30,7 +31,6 @@ import DeviceDetector from 'node-device-detector';
 
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import sendPushNotifications from './src/helpers/sendPushNotification';
-
 const app = express();
 const server = http.createServer(app);
 
@@ -98,7 +98,7 @@ app.use('/api/v2/', GameRouter);
 app.use('/api/v2/', FacilitieRouter);
 app.use('/api/v2/', MessageRouter);
 app.use('/api/v2', GroupRouter);
-
+app.use('/api/v2', TeamRouter);
 app.use(errorHandler);
 
 const io = new Server(server);

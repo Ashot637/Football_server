@@ -12,6 +12,9 @@ import Invitation from './Invitation.model';
 import StadionNotification from './StadionNotification.model';
 import GameUniforms from './GameUniforms.model';
 import Notification from './Notification.model';
+import Team from './Team.model';
+import TeamPlayer from './TeamPlayers';
+import TeamGame from './TeamGames.model';
 
 Stadion.hasMany(Game, { foreignKey: 'stadionId' });
 Game.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
@@ -95,6 +98,28 @@ Message.belongsToMany(User, {
   as: 'likedUsers',
 });
 
+User.belongsToMany(Team, {
+  as: 'team',
+  foreignKey: 'userId',
+  through: TeamPlayer,
+});
+Team.belongsToMany(User, {
+  as: 'user',
+  foreignKey: 'teamId',
+  through: TeamPlayer,
+});
+
+Game.belongsToMany(Team, {
+  as: 'team',
+  foreignKey: 'gameId',
+  through: TeamGame,
+});
+Team.belongsToMany(Team, {
+  as: 'game',
+  foreignKey: 'teamId',
+  through: TeamGame,
+});
+
 export {
   User,
   Game,
@@ -109,4 +134,7 @@ export {
   GameUniforms,
   StadionNotification,
   Notification,
+  Team,
+  TeamGame,
+  TeamPlayer,
 };

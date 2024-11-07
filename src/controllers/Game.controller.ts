@@ -163,6 +163,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
       await UserGame.create({
         userId,
         gameId: +game.id,
+        goalsCount: 0,
       });
     } else if (range === 4) {
       games = await Game.bulkCreate([
@@ -223,6 +224,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         UserGame.create({
           userId,
           gameId: +game.id,
+          goalsCount: 0,
         });
         GameUniforms.create({
           gameId: game.id,
@@ -256,6 +258,7 @@ const organizerCreate = async (req: RequestWithUser, res: Response, next: NextFu
         UserGame.create({
           userId,
           gameId: +game.id,
+          goalsCount: 0,
         });
         GameUniforms.create({
           gameId: game.id,
@@ -478,6 +481,7 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
           await UserGame.create({
             userId,
             gameId: game.id,
+            goalsCount: 0,
           });
         }
       }
@@ -493,6 +497,7 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
           userId,
           gameId: invitation.gameId,
           willPlay: true,
+          goalsCount: 0,
         });
       }
     }
@@ -1173,6 +1178,7 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
       userId,
       gameId: +gameId,
       willPlay: true,
+      goalsCount: 0,
     });
 
     const userGroup = await UserGroup.findOne({
@@ -1512,6 +1518,7 @@ const joinToPrivateGame = async (req: RequestWithUser, res: Response, next: Next
         userId,
         gameId: id,
         willPlay: true,
+        goalsCount: 0,
       });
     }
 

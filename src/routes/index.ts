@@ -5,6 +5,7 @@ import FacilitieRouter from './Facilitie.routes';
 import MessageRouter from './Message.routes';
 import GroupRouter from './Group.routes';
 import TeamRouter from './Team.routes';
+import ChatRouter from './Chat.router';
 export {
   UserRouter,
   StadionRouter,
@@ -13,4 +14,5 @@ export {
   MessageRouter,
   GroupRouter,
   TeamRouter,
+  ChatRouter,
 };

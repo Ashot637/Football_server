@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Team, TeamPlayer } from '../models';
+import { Team, TeamPlayer, UserChat, UserGroup } from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
 
@@ -18,9 +18,11 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     });
 
     if (created) {
+      const teamPlayer = await TeamPlayer.findAll({ where: { teamId: team.id } });
+      await UserChat.create({ userId: id, chatId: 1, lastSeenMessageTime: undefined });
       return res.status(201).json({ success: true, team });
     } else {
-      return res.status(200).json({ success: true, message: 'Team already exists', team });
+      return res.status(400).json({ success: false, message: 'Team already exists' });
     }
   } catch (error) {
     next(error);
@@ -57,19 +59,24 @@ const addToTeam = async (req: RequestWithUser, res: Response, next: NextFunction
     const { userIds } = req.body;
     const team = await Team.findOne({ where: { userId: id } });
 
-    // Ensure you’re getting only the `id` from the team object
     const teamId = team?.id;
 
     const teamPlayers = await TeamPlayer.bulkCreate(
       userIds.map((id: number) => ({
         userId: id,
-        teamId, // use the extracted `teamId`
+        teamId,
         playerPosition: null,
         playerStatus: null,
       })),
     );
-
-    return res.status(500).json({ success: true, teamPlayers });
+    await UserChat.bulkCreate(
+      userIds.map((id: number) => ({
+        userId: id,
+        teamId,
+        lastSeenMessageTime: undefined,
+      })),
+    );
+    return res.status(200).json({ success: true, teamPlayers });
   } catch (error) {
     next(error);
   }

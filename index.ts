@@ -22,6 +22,7 @@ import {
   MessageRouter,
   GroupRouter,
   TeamRouter,
+  ChatRouter,
 } from './src/routes';
 import { Invitation } from './src/models';
 
@@ -99,6 +100,7 @@ app.use('/api/v2/', FacilitieRouter);
 app.use('/api/v2/', MessageRouter);
 app.use('/api/v2', GroupRouter);
 app.use('/api/v2', TeamRouter);
+app.use('/api/v2', ChatRouter);
 app.use(errorHandler);
 
 const io = new Server(server);

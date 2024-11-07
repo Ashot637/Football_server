@@ -55,15 +55,20 @@ const addToTeam = async (req: RequestWithUser, res: Response, next: NextFunction
     }
     const { id } = req.user;
     const { userIds } = req.body;
-    const teamId = await Team.findOne({ where: { userId: id } });
+    const team = await Team.findOne({ where: { userId: id } });
+
+    // Ensure you’re getting only the `id` from the team object
+    const teamId = team?.id;
+
     const teamPlayers = await TeamPlayer.bulkCreate(
       userIds.map((id: number) => ({
         userId: id,
-        teamId,
+        teamId, // use the extracted `teamId`
         playerPosition: null,
         playerStatus: null,
       })),
     );
+
     return res.status(500).json({ success: true, teamPlayers });
   } catch (error) {
     next(error);

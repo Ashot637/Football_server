@@ -106,7 +106,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const userChat = await UserChat.bulkCreate(
       userIds.map((id: number) => ({
         userId: id,
-        chatId: chat.id,
+        chatId: 5,
         lastSeenMessageTime: null,
       })),
     );

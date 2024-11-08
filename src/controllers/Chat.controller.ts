@@ -87,7 +87,27 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     next(error);
   }
 };
-
+const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: new Date() });
+    const { userIds } = req.body;
+    const userChat = await UserChat.bulkCreate(
+      userIds.map((id: number) => ({
+        userId: id,
+        chatId: chat.id,
+        lastSeenMessageTime: null,
+      })),
+    );
+    return res.status(201).json({ success: true, userChat });
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   send,
+  create,
 };

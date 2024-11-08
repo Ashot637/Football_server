@@ -95,6 +95,14 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id: userId } = req.user;
     const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
+    console.log(
+      '==========================================================================================',
+    );
+    console.log(userIds);
+    console.log(
+      '==========================================================================================',
+    );
+
     const userChat = await UserChat.bulkCreate(
       userIds.map((id: number) => ({
         userId: id,

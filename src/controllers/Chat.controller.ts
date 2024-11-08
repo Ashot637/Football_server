@@ -99,13 +99,21 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
       '==========================================================================================',
     );
 
-    const userChat = await UserChat.bulkCreate(
-      userIds.map((id: number) => ({
-        userId: id,
-        chatId: 5,
-        lastSeenMessageTime: null,
-      })),
-    );
+    for (const userIda of userIds) {
+      // Проверяем, существует ли пользователь с данным userId
+      const userExists = await User.findByPk(userIda);
+
+      if (userExists) {
+        // Создаем запись в UserChat, если пользователь существует
+        await UserChat.create({
+          userId,
+          chatId: 5,
+          lastSeenMessageTime: undefined,
+        });
+      } else {
+        console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+      }
+    }
     return res.status(201).json({ success: true, userChat });
   } catch (error) {
     next(error);

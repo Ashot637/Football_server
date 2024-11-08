@@ -124,9 +124,15 @@ Team.belongsToMany(Team, {
 
 Chat.belongsToMany(User, {
   through: UserChat,
-  foreignKey: 'userId',
+  foreignKey: 'chatId', // chatId — это внешний ключ для модели Chat в таблице UserChat
+  otherKey: 'userId', // userId — это внешний ключ для модели User в таблице UserChat
 });
-User.belongsToMany(Chat, { through: UserChat, foreignKey: 'chatId' });
+
+User.belongsToMany(Chat, {
+  through: UserChat,
+  foreignKey: 'userId', // userId — это внешний ключ для модели User в таблице UserChat
+  otherKey: 'chatId', // chatId — это внешний ключ для модели Chat в таблице UserChat
+});
 
 export {
   User,

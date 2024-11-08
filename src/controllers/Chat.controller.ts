@@ -88,7 +88,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    const { id: userId } = req.user;
+    const { id } = req.user;
     const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
     console.log(
@@ -100,11 +100,9 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     );
 
     for (const userIda of userIds) {
-      // Проверяем, существует ли пользователь с данным userId
       const userExists = await User.findByPk(userIda);
 
       if (userExists) {
-        // Создаем запись в UserChat, если пользователь существует
         await UserChat.create({
           userId,
           chatId: 5,

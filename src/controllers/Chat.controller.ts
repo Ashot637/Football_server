@@ -114,7 +114,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
         console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
       }
     }
-    return res.status(201).json({ success: true, userChat });
+    return res.status(201).json({ success: true });
   } catch (error) {
     next(error);
   }

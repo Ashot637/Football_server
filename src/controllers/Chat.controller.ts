@@ -75,11 +75,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     };
     userSocket.broadcast.to(chatId).emit('new-message', messageData);
 
-    await Chat.update(
-      //@ts-ignore
-      { lastMessageTimestamp: new Date() },
-      { where: { id: chatId } },
-    );
+    await Chat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
 
     UserChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });
     return res.send(messageData);

@@ -6,4 +6,5 @@ const router = Router();
 
 router.post('/chat/sendMessage', checkRole(ROLES.USER), ChatController.send);
 router.post('/chat/create', checkRole(ROLES.USER), ChatController.create);
+router.post('/chat/create1', checkRole(ROLES.USER), ChatController.createChat);
 export default router;

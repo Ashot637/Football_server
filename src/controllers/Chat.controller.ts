@@ -115,7 +115,21 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     next(error);
   }
 };
+const createChat = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: undefined });
+
+    return res.status(201).json({ success: true, chat });
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   send,
   create,
+  createChat,
 };

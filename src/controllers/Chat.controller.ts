@@ -79,8 +79,9 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
         id: associatedUser.id,
       },
     };
-    userSocket.broadcast.to(chatId).emit('new-message', messageData);
-
+    if (userSocket) {
+      userSocket.broadcast.to(chatId).emit('new-message', messageData);
+    }
     await TeamChat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
 
     UserForChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });

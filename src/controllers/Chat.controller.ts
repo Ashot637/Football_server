@@ -62,8 +62,13 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
         },
       },
     });
+    const messages = await Message.create({
+      text: message,
+      userId,
+      chatId,
+    });
     //@ts-ignore
-    const associatedUser: User = await message.getUser();
+    const associatedUser: User = await messages.getUser();
 
     const userSocket = userSockets.get(userId);
     const messageData = {

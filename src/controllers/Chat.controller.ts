@@ -91,18 +91,18 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id } = req.user;
     const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
-    await UserForChat.create({ userId: id, chatId: chat.id });
+    // await UserForChat.create({ userId: id, chatId: chat.id });
 
-    // for (const userIda of userIds) {
-    //   const userExists = await User.findByPk(userIda);
+    for (const userIda of userIds) {
+      const userExists = await User.findByPk(userIda);
 
-    //   if (userExists) {
-    //     await UserChat.create({ userId: id, chatId: chat.id });
-    //   } else {
-    //     // console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
-    //     return res.status(400).json({ success: false });
-    //   }
-    // }
+      if (userExists) {
+        await UserForChat.create({ userId: +userExists.id, chatId: chat.id });
+      } else {
+        // console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+        return res.status(400).json({ success: false });
+      }
+    }
     return res.status(201).json({ success: true });
   } catch (error) {
     next(error);

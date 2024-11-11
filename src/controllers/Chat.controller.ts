@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { type RequestWithUser } from '../types/RequestWithUser';
-import { Chat, Message, User, UserChat } from '../models';
+import { TeamChat, Message, User, UserChat } from '../models';
 import { groupsSocket, userSockets } from '../sockets/userSockets';
 import { CourierClient } from '@trycourier/courier';
 
@@ -17,7 +17,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     }
     const userMessage = await Message.create({ text: message, chatId, userId });
 
-    const GroupWithUsers: any = await Chat.findByPk(+chatId, {
+    const GroupWithUsers: any = await TeamChat.findByPk(+chatId, {
       include: [{ model: User }],
     });
     //  as Group & { dataValues: { game: Game[] & { dataValues: { users: User[] } } } };
@@ -75,7 +75,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     };
     userSocket.broadcast.to(chatId).emit('new-message', messageData);
 
-    await Chat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
+    await TeamChat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
 
     UserChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });
     return res.send(messageData);
@@ -89,7 +89,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id } = req.user;
-    const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: new Date() });
+    const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
     await UserChat.create({ userId: id, chatId: chat.id });
 
@@ -115,7 +115,7 @@ const createChat = async (req: RequestWithUser, res: Response, next: NextFunctio
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: undefined });
+    const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: undefined });
 
     return res.status(201).json({ success: true, chat });
   } catch (error) {

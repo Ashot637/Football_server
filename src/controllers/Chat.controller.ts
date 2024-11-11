@@ -101,7 +101,8 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
           defaults: { lastSeenMessageTime: undefined, userId: userIda, chatId: chat.id },
         });
       } else {
-        console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+        // console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+        return res.status(400).json({ success: false });
       }
     }
     return res.status(201).json({ success: true });

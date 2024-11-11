@@ -91,41 +91,25 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id } = req.user;
     const chat = await Chat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
-    console.log(
-      '==========================================================================================',
-    );
-    console.log(userIds);
-    console.log(
-      '==========================================================================================',
-    );
 
     for (const userIda of userIds) {
-      // const userExists = await User.findByPk(userIda);
+      const userExists = await User.findByPk(userIda);
 
-      // if (userExists) {
-      //   console.log(userExists.id);
-
-      await UserChat.findOrCreate({
-        where: {
-          chatId: chat.id,
-          userId: userIda,
-        },
-        defaults: {
-          lastSeenMessageTime: undefined,
-          chatId: chat.id,
-          userId: userIda,
-        },
-      });
-
-      // } else {
-      //   console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
-      // }
+      if (userExists) {
+        await UserChat.findOrCreate({
+          where: { userId: userIda, chatId: chat.id },
+          defaults: { lastSeenMessageTime: undefined, userId: userIda, chatId: chat.id },
+        });
+      } else {
+        console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+      }
     }
     return res.status(201).json({ success: true });
   } catch (error) {
     next(error);
   }
 };
+
 const createChat = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {

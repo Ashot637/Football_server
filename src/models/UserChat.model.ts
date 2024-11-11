@@ -26,8 +26,8 @@ class UserChat
 UserChat.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: { type: DataTypes.INTEGER },
-    chatId: { type: DataTypes.INTEGER },
+    userId: { type: DataTypes.INTEGER, field: 'userId' },
+    chatId: { type: DataTypes.INTEGER, field: 'chatId' },
     lastSeenMessageTime: { type: DataTypes.DATE },
   },
   {

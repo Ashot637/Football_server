@@ -97,7 +97,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
       if (userExists) {
         await UserChat.findOrCreate({
-          where: { userId: userIda, chatId: chat.id },
+          where: { userId: 87, chatId: chat.id },
           defaults: { lastSeenMessageTime: undefined, userId: userIda, chatId: chat.id },
         });
       } else {

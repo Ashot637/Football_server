@@ -31,13 +31,11 @@ UserChat.init(
     userId: {
       type: DataTypes.INTEGER,
       field: 'userId',
-      references: { model: User, key: 'id' },
       allowNull: false,
     },
     chatId: {
       type: DataTypes.INTEGER,
       field: 'chatId',
-      references: { model: Chat, key: 'id' },
       allowNull: false,
     },
     lastSeenMessageTime: { type: DataTypes.DATE },

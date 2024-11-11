@@ -16,7 +16,7 @@ class UserChat
 {
   public id!: number;
   public userId!: number;
-  public chatId!: number;
+  public chatId?: number;
   public lastSeenMessageTime?: Date | undefined;
 
   public readonly createdAt!: Date;

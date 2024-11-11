@@ -62,6 +62,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
         },
       },
     });
+    //@ts-ignore
     const associatedUser: User = await message.getUser();
 
     const userSocket = userSockets.get(userId);

@@ -103,6 +103,8 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
       const userExists = await User.findByPk(userIda);
 
       if (userExists) {
+        console.log(userExists.id);
+
         await UserChat.create({
           userId: userExists.id,
           chatId: 5,

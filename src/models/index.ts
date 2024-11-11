@@ -124,12 +124,12 @@ Team.belongsToMany(Team, {
 
 Chat.belongsToMany(User, {
   through: UserChat,
-  foreignKey: 'userId',
+  foreignKey: 'chatId',
 });
 
 User.belongsToMany(Chat, {
   through: UserChat,
-  foreignKey: 'chatId',
+  foreignKey: 'userId',
 });
 
 export {

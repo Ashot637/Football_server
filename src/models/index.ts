@@ -132,8 +132,8 @@ User.belongsToMany(TeamChat, {
   foreignKey: 'userId',
 });
 
-TeamChat.hasMany(Message, { foreignKey: 'chatId' });
-Message.belongsTo(TeamChat, { foreignKey: 'chatId' });
+TeamChat.hasMany(Message, { foreignKey: 'chatId', as: 'message' });
+Message.belongsTo(TeamChat, { foreignKey: 'chatId', as: 'teamChat' });
 
 export {
   User,

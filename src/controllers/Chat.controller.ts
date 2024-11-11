@@ -100,19 +100,26 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     );
 
     for (const userIda of userIds) {
-      const userExists = await User.findByPk(userIda);
+      // const userExists = await User.findByPk(userIda);
 
-      if (userExists) {
-        console.log(userExists.id);
+      // if (userExists) {
+      //   console.log(userExists.id);
 
-        await UserChat.create({
-          userId: +userExists.id,
+      await UserChat.findOrCreate({
+        where: {
           chatId: chat.id,
+          userId: userIda,
+        },
+        defaults: {
           lastSeenMessageTime: undefined,
-        });
-      } else {
-        console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
-      }
+          chatId: chat.id,
+          userId: userIda,
+        },
+      });
+
+      // } else {
+      //   console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
+      // }
     }
     return res.status(201).json({ success: true });
   } catch (error) {

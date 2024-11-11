@@ -28,8 +28,18 @@ class UserChat
 UserChat.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: { type: DataTypes.INTEGER, field: 'userId', references: { model: User, key: 'id' } },
-    chatId: { type: DataTypes.INTEGER, field: 'chatId', references: { model: Chat, key: 'id' } },
+    userId: {
+      type: DataTypes.INTEGER,
+      field: 'userId',
+      references: { model: User, key: 'id' },
+      allowNull: false,
+    },
+    chatId: {
+      type: DataTypes.INTEGER,
+      field: 'chatId',
+      references: { model: Chat, key: 'id' },
+      allowNull: false,
+    },
     lastSeenMessageTime: { type: DataTypes.DATE },
   },
   {

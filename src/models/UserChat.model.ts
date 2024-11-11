@@ -1,5 +1,7 @@
 import { Model, Optional, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import User from './User.model';
+import Chat from './Chat';
 
 interface UserChatAttributes {
   id: number;
@@ -26,8 +28,8 @@ class UserChat
 UserChat.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    userId: { type: DataTypes.INTEGER, field: 'userId' },
-    chatId: { type: DataTypes.INTEGER, field: 'chatId' },
+    userId: { type: DataTypes.INTEGER, field: 'userId', references: { model: User, key: 'id' } },
+    chatId: { type: DataTypes.INTEGER, field: 'chatId', references: { model: Chat, key: 'id' } },
     lastSeenMessageTime: { type: DataTypes.DATE },
   },
   {

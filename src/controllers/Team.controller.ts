@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Team, TeamPlayer, UserChat, UserGroup } from '../models';
+import { Team, TeamPlayer, UserForChat, UserGroup } from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
 
@@ -19,7 +19,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     if (created) {
       const teamPlayer = await TeamPlayer.findAll({ where: { teamId: team.id } });
-      await UserChat.create({ userId: id, chatId: 1, lastSeenMessageTime: undefined });
+      await UserForChat.create({ userId: id, chatId: 1, lastSeenMessageTime: undefined });
       return res.status(201).json({ success: true, team });
     } else {
       return res.status(400).json({ success: false, message: 'Team already exists' });
@@ -69,7 +69,7 @@ const addToTeam = async (req: RequestWithUser, res: Response, next: NextFunction
         playerStatus: null,
       })),
     );
-    await UserChat.bulkCreate(
+    await UserForChat.bulkCreate(
       userIds.map((id: number) => ({
         userId: id,
         teamId,

@@ -3,18 +3,18 @@ import sequelize from '../db';
 import User from './User.model';
 import Chat from './Chat';
 
-interface UserChatAttributes {
+interface UserForChatAttributes {
   id: number;
   userId: number;
   chatId?: number;
   lastSeenMessageTime?: Date;
 }
 
-interface UserChatCreationAttributes extends Optional<UserChatAttributes, 'id'> {}
+interface UserForChatCreationAttributes extends Optional<UserForChatAttributes, 'id'> {}
 
-class UserChat
-  extends Model<UserChatAttributes, UserChatCreationAttributes>
-  implements UserChatAttributes
+class UserForChat
+  extends Model<UserForChatAttributes, UserForChatCreationAttributes>
+  implements UserForChatAttributes
 {
   public id!: number;
   public userId!: number;
@@ -25,7 +25,7 @@ class UserChat
   public readonly updatedAt!: Date;
 }
 
-UserChat.init(
+UserForChat.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: {
@@ -42,8 +42,8 @@ UserChat.init(
   },
   {
     sequelize,
-    modelName: 'UserChat',
+    modelName: 'UserForChat',
   },
 );
 
-export default UserChat;
+export default UserForChat;

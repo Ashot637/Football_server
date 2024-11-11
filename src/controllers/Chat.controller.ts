@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { type RequestWithUser } from '../types/RequestWithUser';
-import { TeamChat, Message, User, UserChat } from '../models';
+import { TeamChat, Message, User, UserForChat } from '../models';
 import { groupsSocket, userSockets } from '../sockets/userSockets';
 import { CourierClient } from '@trycourier/courier';
 
@@ -11,7 +11,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
     }
     const { id: userId } = req.user;
     const { message, chatId, expoPushToken, userName } = req.body;
-    const userChat = await UserChat.findOne({ where: { userId, chatId } });
+    const userChat = await UserForChat.findOne({ where: { userId, chatId } });
     if (!userChat) {
       return res.status(404).json({ success: false, message: 'Chat not found' });
     }
@@ -77,7 +77,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
 
     await TeamChat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
 
-    UserChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });
+    UserForChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });
     return res.send(messageData);
   } catch (error) {
     next(error);
@@ -91,7 +91,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id } = req.user;
     const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
-    await UserChat.create({ userId: id, chatId: chat.id });
+    await UserForChat.create({ userId: id, chatId: chat.id });
 
     // for (const userIda of userIds) {
     //   const userExists = await User.findByPk(userIda);

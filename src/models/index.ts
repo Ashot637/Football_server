@@ -16,7 +16,7 @@ import Team from './Team.model';
 import TeamPlayer from './TeamPlayers';
 import TeamGame from './TeamGames.model';
 import TeamChat from './Chat';
-import UserChat from './UserChat.model';
+import UserForChat from './UserChat.model';
 
 Stadion.hasMany(Game, { foreignKey: 'stadionId' });
 Game.belongsTo(Stadion, { as: 'stadion', foreignKey: 'stadionId' });
@@ -150,5 +150,5 @@ export {
   TeamGame,
   TeamPlayer,
   TeamChat,
-  UserChat,
+  UserForChat,
 };

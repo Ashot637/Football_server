@@ -98,7 +98,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
       if (userExists) {
         await UserChat.findOrCreate({
           where: { userId: 87, chatId: chat.id },
-          defaults: { lastSeenMessageTime: undefined, userId: userIda, chatId: chat.id },
+          defaults: { lastSeenMessageTime: undefined, userId: 87, chatId: chat.id },
         });
       } else {
         // console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);

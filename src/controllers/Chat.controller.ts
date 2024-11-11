@@ -106,7 +106,7 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
         console.log(userExists.id);
 
         await UserChat.create({
-          userId: userExists.id,
+          userId: id,
           chatId: 5,
           lastSeenMessageTime: undefined,
         });

@@ -615,7 +615,7 @@ const getAllNotifications = async (req: RequestWithUser, res: Response, next: Ne
         },
         {
           model: Group,
-          as: 'group',
+          as: 'notificationGroup',
         },
       ],
     });

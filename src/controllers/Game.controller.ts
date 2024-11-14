@@ -1154,7 +1154,7 @@ const register = async (req: RequestWithUser, res: Response, next: NextFunction)
 
     const game = await Game.findByPk(gameId, {
       include: [
-        { model: Group, as: 'group', attributes: ['id'] },
+        { model: Group, as: 'gameGroup', attributes: ['id'] },
         { model: Stadion, as: 'stadion', attributes: ['title_en'] },
       ],
       attributes: {
@@ -1413,7 +1413,7 @@ const cancel = async (req: RequestWithUser, res: Response, next: NextFunction) =
 
     const game = await Game.findByPk(gameId, {
       include: [
-        { model: Group, as: 'group', attributes: ['id'] },
+        { model: Group, as: 'gameGroup', attributes: ['id'] },
         { model: User, as: 'users' },
       ],
     });

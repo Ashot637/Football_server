@@ -73,18 +73,18 @@ Game.hasMany(Notification, { foreignKey: 'gameId' });
 Notification.belongsTo(Game, { as: 'game', foreignKey: 'gameId' });
 
 Group.hasMany(Notification, { foreignKey: 'groupId' });
-Notification.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });
+Notification.belongsTo(Group, { as: 'notificationGroup', foreignKey: 'groupId' });
 
 // Messages
 
 Group.hasMany(Game, { as: 'game', foreignKey: 'groupId' });
-Game.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });
+Game.belongsTo(Group, { as: 'gameGroup', foreignKey: 'groupId' });
 
 Group.belongsToMany(User, { through: UserGroup, foreignKey: 'groupId' });
 User.belongsToMany(Group, { through: UserGroup, foreignKey: 'userId' });
 
 Group.hasMany(Message, { as: 'messages', foreignKey: 'groupId' });
-Message.belongsTo(Group, { as: 'group', foreignKey: 'groupId' });
+Message.belongsTo(Group, { as: 'messageGroup', foreignKey: 'groupId' });
 
 User.hasMany(Message, { as: 'messages', foreignKey: 'userId' });
 Message.belongsTo(User, { as: 'user', foreignKey: 'userId' });

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { type RequestWithUser } from '../types/RequestWithUser';
-import { TeamChat, Message, User, UserForChat } from '../models';
+import { TeamChat, Message, User, UserForChat, TeamPlayer, MessageLikes } from '../models';
 import { groupsSocket, userSockets } from '../sockets/userSockets';
 import { CourierClient } from '@trycourier/courier';
 
@@ -35,7 +35,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       const userSocket = userSockets.get(id);
       if (userSocket) {
         userSocket.emit('user-new-message');
-        userSocket.emit('group-new-message', chatId);
+        userSocket.emit('chat-new-message', chatId);
       }
     });
     const usersToSend = users.reduce((acc: string[], user: User) => {
@@ -80,7 +80,7 @@ const send = async (req: RequestWithUser, res: Response, next: NextFunction) => 
       },
     };
     if (userSocket) {
-      userSocket.broadcast.to(chatId).emit('new-message', messageData);
+      userSocket.broadcast.to(`room_${chatId}`).emit('new-message', messageData);
     }
     await TeamChat.update({ lastMessageTimestamp: new Date() }, { where: { id: chatId } });
 
@@ -98,7 +98,6 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id } = req.user;
     const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: new Date() });
     const { userIds } = req.body;
-    // await UserForChat.create({ userId: id, chatId: chat.id });
 
     for (const userIda of userIds) {
       const userExists = await User.findByPk(userIda);
@@ -106,7 +105,6 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
       if (userExists) {
         await UserForChat.create({ userId: +userExists.id, chatId: chat.id });
       } else {
-        // console.log(`Пользователь с id ${userIda} не существует. Запись не будет добавлена.`);
         return res.status(400).json({ success: false });
       }
     }
@@ -116,21 +114,126 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
   }
 };
 
-const createChat = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+// const createChat = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ success: false, message: 'Not authenticated' });
+//     }
+//     const { id: userId } = req.user;
+//     const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: undefined });
+
+//     return res.status(201).json({ success: true, chat });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+const readChatMessage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     const { id: userId } = req.user;
-    const chat = await TeamChat.create({ forPublic: true, lastMessageTimestamp: undefined });
-
-    return res.status(201).json({ success: true, chat });
+    const { chatId } = req.body;
+    UserForChat.update({ lastSeenMessageTime: new Date() }, { where: { userId, chatId: +chatId } });
+    const userSocket = userSockets.get(userId);
+    userSocket.broadcast.to(`room_${chatId}`).emit('read-message-in-chat', chatId);
+    return res.send({ success: true });
   } catch (error) {
     next(error);
   }
 };
+const deleteMessage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { messageId, chatId } = req.body;
+
+    Message.destroy({
+      where: {
+        id: messageId,
+        userId,
+      },
+    });
+
+    const userSocket = userSockets.get(userId);
+
+    userSocket.broadcast.to(`room_${chatId}`).emit('delete-message', messageId);
+
+    return res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+const onReactToMessage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { messageId, chatId, messageOwnerId, groupTitle, userName } = req.body;
+
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'name', 'img'],
+    });
+
+    const existingReaction = await MessageLikes.findOne({
+      where: { messageId, userId },
+    });
+
+    if (existingReaction) {
+      existingReaction.destroy();
+    } else {
+      MessageLikes.create({ messageId, userId });
+
+      const onlineUsers = groupsSocket.get(chatId);
+      if (messageOwnerId !== userId) {
+        const user = await User.findByPk(messageOwnerId);
+        const courier = new CourierClient({
+          authorizationToken: 'pk_prod_8MCAZKDAZGM4Q2MKZ71QQVAHXZRK',
+        });
+        await courier.send({
+          message: {
+            to: {
+              //@ts-ignore
+              expo: {
+                token: user?.expoPushToken,
+              },
+            },
+            template: '992NM6VJF7MNVAHDCV54CHZQSEZH',
+            data: {
+              groupTitle,
+              userName,
+              text: 'Liked your message',
+            },
+          },
+        });
+
+        if (!onlineUsers.includes(messageOwnerId)) {
+          User.update({ hasMessage: true }, { where: { id: messageOwnerId } });
+          const userSocket = userSockets.get(messageOwnerId);
+          if (userSocket) {
+            userSocket.emit('user-new-message');
+            userSocket.emit('chat-new-message', chatId);
+          }
+        }
+      }
+    }
+
+    const userSocket = userSockets.get(userId);
+    userSocket.broadcast.to(`room_${chatId}`).emit('react-to-message', { messageId, user });
+
+    return res.send({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   send,
   create,
-  createChat,
+  readChatMessage,
+  deleteMessage,
+  onReactToMessage,
 };

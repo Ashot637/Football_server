@@ -9,7 +9,30 @@ router.post(
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   TeamController.create,
 );
-router.get('/team/getAll', checkRole(ROLES.USER), TeamController.getAll);
-router.get('/team/getUsers', checkRole(ROLES.USER), TeamController.getUsers);
-router.post('/team/addMember', checkRole(ROLES.USER), TeamController.addToTeam);
+router.get(
+  '/team/getAll',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getAll,
+);
+router.get(
+  '/team/getUsers',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getUsers,
+);
+router.post(
+  '/team/addMember',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.addToTeam,
+);
+router.delete(
+  '/team/delete',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.remove,
+);
+router.delete(
+  '/team/deletePlayer',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.reamoveForTeam,
+);
+
 export default router;

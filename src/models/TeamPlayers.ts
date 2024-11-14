@@ -1,15 +1,18 @@
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../db';
 
 interface TeamPlayerAttributes {
-  id: number;
+  id?: number;
   userId: number;
   teamId: number;
-  playerStatus: string;
-  playerPosition: string;
+  playerStatus: string | null;
+  playerPosition: string | null;
 }
 
-class TeamPlayer extends Model<TeamPlayerAttributes> implements TeamPlayerAttributes {
+class TeamPlayer
+  extends Model<TeamPlayerAttributes>
+  implements Optional<TeamPlayerAttributes, 'id'>
+{
   public id!: number;
   public userId!: number;
   public teamId!: number;

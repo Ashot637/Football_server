@@ -26,7 +26,7 @@ import {
 } from './src/routes';
 import { Invitation } from './src/models';
 
-import { groupsSocket, userSockets } from './src/sockets/userSockets';
+import { groupsSocket, userSockets, chatSocket } from './src/sockets/userSockets';
 
 import DeviceDetector from 'node-device-detector';
 
@@ -117,6 +117,10 @@ io.on('connection', (socket: Socket) => {
       const newArr = value.filter((id: number) => +id === +userId);
       groupsSocket.set(key, newArr);
     });
+    chatSocket.forEach((value, key) => {
+      const newArr = value.filter((id: number) => +id === +userId);
+      chatSocket.set(key, newArr);
+    });
     console.log(userId + ' Disconnected');
   });
 
@@ -130,6 +134,16 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
+  socket.on('join-chat', ({ chatId, userId }) => {
+    socket.join(`room_${chatId}`);
+    console.log('joined to chat' + chatId);
+    if (!chatSocket.has(chatId)) {
+      chatSocket.set(chatId, [userId]);
+    } else {
+      chatSocket.set(chatId, [...chatSocket.get(chatId), userId]);
+    }
+  });
+
   socket.on('leave-group', ({ groupId, userId }) => {
     socket.leave(groupId);
     console.log('leaved from group' + groupId);
@@ -138,6 +152,17 @@ io.on('connection', (socket: Socket) => {
       const newArray = currentArray.filter((id: number) => id !== userId);
 
       groupsSocket.set(groupId, newArray);
+    }
+  });
+
+  socket.on('leave-chat', ({ chatId, userId }) => {
+    socket.leave(chatId);
+    console.log('leaved from chat' + chatId);
+    if (chatSocket.has(chatId)) {
+      const currentArray = chatSocket.get(chatId);
+      const newArray = currentArray.filter((id: number) => id !== userId);
+
+      chatSocket.set(chatId, newArray);
     }
   });
 
@@ -180,14 +205,6 @@ async function sendPushNotification(pushTokens: string[], message: string): Prom
     }
   }
 }
-const pushTokens: string[] = ['ExponentPushToken[KSlO3sLoZdSUO1slxtwBTI]'];
-// список Expo push токенов
-const message: string = 'Ваше уведомление пришло!';
-// Пример использования
-
-sendPushNotification(pushTokens, message).catch((error) => {
-  console.error('Error in sending push notifications', error);
-});
 
 app.post('/send-notification', async (req: Request, res: Response) => {
   const { pushTokens, message } = req.body;

@@ -122,6 +122,15 @@ Team.belongsToMany(Team, {
   through: TeamGame,
 });
 
+TeamChat.belongsTo(Team, {
+  as: 'team',
+  foreignKey: 'teamId',
+});
+Team.hasOne(TeamChat, {
+  as: 'teamChat',
+  foreignKey: 'teamId',
+});
+
 TeamChat.belongsToMany(User, {
   through: UserForChat,
   foreignKey: 'chatId',

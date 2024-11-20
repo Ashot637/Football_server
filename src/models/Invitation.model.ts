@@ -14,7 +14,7 @@ interface InvitationAttributes {
   groupId?: number;
   gameId?: number;
   type: INVITATION_TYPES;
-  teamId?: number;
+  // teamId?: number;
 }
 
 interface InvitationCreationAttributes extends Optional<InvitationAttributes, 'id'> {}
@@ -28,7 +28,7 @@ class Invitation
   public from!: string;
   public groupId?: number;
   public gameId?: number;
-  public teamId?: number | undefined;
+  // public teamId?: number | undefined;
   public type!: INVITATION_TYPES;
 
   public readonly createdAt!: Date;
@@ -42,7 +42,7 @@ Invitation.init(
     from: { type: DataTypes.STRING, allowNull: false },
     groupId: { type: DataTypes.INTEGER, allowNull: true },
     gameId: { type: DataTypes.INTEGER, allowNull: true },
-    teamId: { type: DataTypes.INTEGER, allowNull: true },
+    // teamId: { type: DataTypes.INTEGER, allowNull: true },
     type: { type: DataTypes.STRING, allowNull: false },
   },
   {

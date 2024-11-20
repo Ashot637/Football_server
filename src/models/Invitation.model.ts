@@ -11,8 +11,8 @@ interface InvitationAttributes {
   id: number;
   ip: string;
   from: string;
-  groupId?: number;
-  gameId?: number;
+  groupId: number;
+  gameId: number;
   type: INVITATION_TYPES;
   // teamId?: number;
 }
@@ -26,8 +26,8 @@ class Invitation
   public id!: number;
   public ip!: string;
   public from!: string;
-  public groupId?: number;
-  public gameId?: number;
+  public groupId!: number;
+  public gameId!: number;
   // public teamId?: number | undefined;
   public type!: INVITATION_TYPES;
 

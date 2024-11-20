@@ -93,6 +93,46 @@ app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 });
+app.get('/team', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const ipAddress = req.headers['x-forwarded-for'] as string;
+    const { token } = req.query;
+
+    if (!token) {
+      return res.send(ipAddress);
+    }
+    const decoded: any = jwt.verify(
+      token as string,
+      process.env.SECRET_KEY as Secret | GetPublicKeyOrSecret,
+    );
+    if (!ipAddress || !decoded) {
+      return res.status(400).json({ success: false, message: 'Invalid link' });
+    }
+
+    const invitation = await Invitation.findOne({
+      where: {
+        ip: ipAddress,
+        teamId: decoded.teamId ,
+        gameId: decoded.gameId ?? 0,
+        type: decoded.type,
+      },
+    });
+
+    if (!invitation) {
+      Invitation.create({
+        ip: ipAddress,
+        teamId: decoded.teamId ,
+        from: decoded.from ?? '',
+        gameId: decoded.gameId ?? 0,
+        type: decoded.type,
+      });
+    }
+
+    return res.redirect('https://ballhola.page.link/DtUc');
+  } catch (error) {
+    next(error);
+  }
+});
 app.use('/api/v2/', UserRouter);
 app.use('/api/v2/', StadionRouter);
 app.use('/api/v2/', GameRouter);

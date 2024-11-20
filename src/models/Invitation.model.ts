@@ -26,9 +26,9 @@ class Invitation
   public id!: number;
   public ip!: string;
   public from!: string;
-  public groupId?: number | undefined;
-  public gameId?: number | undefined;
-  teamId?: number | undefined;
+  public groupId?: number;
+  public gameId?: number;
+  public teamId?: number | undefined;
   public type!: INVITATION_TYPES;
 
   public readonly createdAt!: Date;

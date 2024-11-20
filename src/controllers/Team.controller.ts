@@ -146,4 +146,39 @@ const reamoveForTeam = async (req: RequestWithUser, res: Response, next: NextFun
   }
 };
 
-export default { create, getAll, remove, getUsers, addToTeam, reamoveForTeam };
+const getOneTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id } = req.params;
+    const team = await Team.findByPk(id);
+    return res.status(200).json({ team });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const leaveFromTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id } = req.user;
+    await TeamPlayer.destroy({ where: { userId: id } });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+export default {
+  create,
+  getAll,
+  remove,
+  getUsers,
+  addToTeam,
+  reamoveForTeam,
+  leaveFromTeam,
+  getOneTeam,
+};

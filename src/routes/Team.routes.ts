@@ -35,4 +35,15 @@ router.delete(
   TeamController.reamoveForTeam,
 );
 
+router.get(
+  '/team/:id',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getOneTeam,
+);
+router.post(
+  '/team/leave',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.leaveFromTeam,
+);
+
 export default router;

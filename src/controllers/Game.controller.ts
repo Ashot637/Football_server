@@ -495,6 +495,7 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       if (!userGame) {
         await UserGame.create({
           userId,
+          // @ts-ignore
           gameId: invitation.gameId,
           willPlay: true,
           goalsCount: 0,

@@ -7,14 +7,15 @@ export enum INVITATION_TYPES {
   PRIVATE_GAME = 'PRIVATE_GAME',
   TEAM = 'TEAM',
 }
+
 interface InvitationAttributes {
   id: number;
   ip: string;
   from: string;
-  groupId: number;
-  gameId: number;
+  groupId?: number;
+  gameId?: number;
   type: INVITATION_TYPES;
-  // teamId?: number;
+  teamId?: number;
 }
 
 interface InvitationCreationAttributes extends Optional<InvitationAttributes, 'id'> {}
@@ -26,9 +27,9 @@ class Invitation
   public id!: number;
   public ip!: string;
   public from!: string;
-  public groupId!: number;
-  public gameId!: number;
-  // public teamId?: number | undefined;
+  public groupId?: number;
+  public gameId?: number;
+  public teamId?: number;
   public type!: INVITATION_TYPES;
 
   public readonly createdAt!: Date;
@@ -38,16 +39,27 @@ class Invitation
 Invitation.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    ip: { type: DataTypes.STRING, allowNull: false },
+    ip: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isIP: true, // Проверка на корректность IP
+      },
+    },
     from: { type: DataTypes.STRING, allowNull: false },
     groupId: { type: DataTypes.INTEGER, allowNull: true },
     gameId: { type: DataTypes.INTEGER, allowNull: true },
-    // teamId: { type: DataTypes.INTEGER, allowNull: true },
-    type: { type: DataTypes.STRING, allowNull: false },
+    teamId: { type: DataTypes.INTEGER, allowNull: true },
+    type: {
+      type: DataTypes.ENUM(...Object.values(INVITATION_TYPES)),
+      allowNull: false,
+    },
   },
   {
     sequelize,
     modelName: 'Invitation',
+    tableName: 'invitations',
+    timestamps: true,
   },
 );
 

@@ -273,10 +273,10 @@ const code = async (req: Request<{}, {}, CodeRequest>, res: Response, next: Next
       });
 
       const ids = invitations.map((x) => x.groupId);
-
+      const validIds = ids?.filter((id): id is number => id !== undefined) ?? [];
       const games = await Game.findAll({
         where: {
-          groupId: ids,
+          groupId: validIds,
           startTime: {
             [Op.gt]: new Date(),
           },
@@ -391,10 +391,10 @@ const authMe = async (req: RequestWithUser, res: Response, next: NextFunction) =
     });
 
     const ids = invitations.map((x) => x.groupId);
-
+    const validIds = ids?.filter((id): id is number => id !== undefined) ?? [];
     const games = await Game.findAll({
       where: {
-        groupId: ids,
+        groupId: validIds,
         startTime: {
           [Op.gt]: new Date(),
         },
@@ -664,10 +664,10 @@ const getAllInvitations = async (req: RequestWithUser, res: Response, next: Next
     });
 
     const ids = invitations.map((x) => x.groupId);
-
+    const validIds = ids?.filter((id): id is number => id !== undefined) ?? [];
     const games = await Game.findAll({
       where: {
-        groupId: ids,
+        groupId: validIds,
         startTime: {
           [Op.gt]: new Date(),
         },

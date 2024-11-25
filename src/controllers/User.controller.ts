@@ -129,9 +129,30 @@ const checkPhone = async (req: Request, res: Response, next: NextFunction) => {
     const code = generateCode();
 
     usersToVerify[phone] = code;
-    await sendMessageToNumber(phone, String(code));
 
-    return res.send({ success: true });
+    const otpAuthKey = process.env.OTP_AUTH_KEY;
+    if (!otpAuthKey) {
+      return res.status(400).json({ success: false, message: 'OTP_AUTH_KEY is missing' });
+    }
+
+    dexatelApi.auth(otpAuthKey);
+    const { data } = await dexatelApi.create_verification({
+      data: {
+        channel: 'sms',
+        sender: process.env.OTP_SENDER,
+        phone: phone,
+        template: 'ca927b8b-a349-4e54-a08c-d91497548c91',
+        code,
+      },
+    });
+    usersToVerify[phone] = code;
+
+    console.log(data);
+    return res.status(200).json({
+      success: true,
+      message: 'OTP code sent successfully',
+      data: data,
+    });
   } catch (error) {
     next(error);
   }

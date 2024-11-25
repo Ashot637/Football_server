@@ -175,13 +175,14 @@ const generateUserCode = async (req: Request, res: Response, next: NextFunction)
   try {
     const { phone } = req.body;
 
-    const otpAuthKey = process.env.OTP_AUTH_KEY;
-    if (!otpAuthKey) {
-      return res.status(400).json({ success: false, message: 'OTP_AUTH_KEY is missing' });
-    }
+    // const db = process.env.DB_HOST;
+    // const otpAuthKey = process.env.OTP_AUTH_KEY;
+    // if (!otpAuthKey) {
+    //   return res.status(400).json({ success: false, message: 'OTP_AUTH_KEY is missing' });
+    // }
     const code = generateCode();
 
-    dexatelApi.auth(otpAuthKey);
+    dexatelApi.auth('d013c7a3d9b0a753885c5f38f4961495');
     const { data } = await dexatelApi.create_verification({
       data: {
         channel: 'sms',
@@ -208,13 +209,13 @@ const regenerateUserCode = async (req: Request, res: Response, next: NextFunctio
   try {
     const { phone } = req.body;
 
-    const otpAuthKey = process.env.OTP_AUTH_KEY;
-    if (!otpAuthKey) {
-      return res.status(400).json({ success: false, message: 'OTP_AUTH_KEY is missing' });
-    }
+    // const otpAuthKey = process.env.OTP_AUTH_KEY;
+    // if (!otpAuthKey) {
+    //   return res.status(400).json({ success: false, message: 'OTP_AUTH_KEY is missing' });
+    // }
     const code = generateCode();
 
-    dexatelApi.auth(otpAuthKey);
+    dexatelApi.auth('d013c7a3d9b0a753885c5f38f4961495');
     const { data } = await dexatelApi.create_verification({
       data: {
         channel: 'sms',

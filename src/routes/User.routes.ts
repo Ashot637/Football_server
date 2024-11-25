@@ -34,4 +34,6 @@ router.get(
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   UserController.getAllInvitations,
 );
+
+router.post('/phone/verify', UserController.sendOtpCode);
 export default router;

@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "dexatel-api",
+      "source": "@dexatel-api/v1.0#erye15lywu4dx5",
+      "integrity": "sha512-jaIXz8SHuzZWkdKOznBnnxWNJAGvq4eJPrWavN2IS1qU0Ym08f2nI3T3Y85p055Cr5zNDm8Q6TM+anzVD4NHNw==",
+      "installerVersion": "6.1.2"
+    }
+  ]
+}

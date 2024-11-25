@@ -1,0 +1,2707 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Verify APIs",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "https://api.dexatel.com",
+      "description": "Server base url"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/verifications": {
+      "get": {
+        "tags": [
+          "Verifications"
+        ],
+        "summary": "List code verifications by code",
+        "operationId": "get_verifications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "string",
+              "default": "10",
+              "description": "Default value is 10, can be at maximum 1000"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_token",
+            "schema": {
+              "type": "string",
+              "description": "Found in pagination links and can be used to get 'previous' or 'next' items"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "description": "The searched verification code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "account_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The unique identifier of the account"
+                          },
+                          "message_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The unique identifier of the message"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Recipients phone number"
+                          },
+                          "create_date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Creation date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                          },
+                          "expire_date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Expiration date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Current page number"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Page size. Default value is 10, can be at maximum 1000"
+                        },
+                        "total": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Total count of requested resources"
+                        },
+                        "links": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "first": {
+                                  "type": "string",
+                                  "description": "URL to the first page"
+                                },
+                                "current": {
+                                  "type": "string",
+                                  "description": "URL to the current page"
+                                },
+                                "previous": {
+                                  "type": "string",
+                                  "description": "URL to the previous page, if any"
+                                },
+                                "next": {
+                                  "type": "string",
+                                  "description": "URL to the next page, if any"
+                                }
+                              }
+                            },
+                            {
+                              "description": "Contains URLs to get next/previous resources"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong></p> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1627</td> <td>Parameter 'code' is missing</td> <td></td> </tr> </table>"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Verifications"
+        ],
+        "summary": "Send verification message",
+        "operationId": "create_verification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data"
+                ],
+                "properties": {
+                  "data": {
+                    "oneOf": [
+                      {
+                        "title": "SMS Verification",
+                        "type": "object",
+                        "required": [
+                          "channel",
+                          "sender",
+                          "phone",
+                          "template"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "The channel of verification message"
+                          },
+                          "sender": {
+                            "type": "string",
+                            "description": "Name (unique identifier) of the sender"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                          },
+                          "template": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                          },
+                          "code_length": {
+                            "type": "number",
+                            "minimum": 4,
+                            "maximum": 8,
+                            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": "4",
+                            "maxLength": "8",
+                            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                          }
+                        }
+                      },
+                      {
+                        "title": "Viber Verification",
+                        "type": "object",
+                        "required": [
+                          "channel",
+                          "sender",
+                          "phone",
+                          "template"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "The channel of verification message"
+                          },
+                          "sender": {
+                            "type": "string",
+                            "description": "Name (unique identifier) of the sender"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                          },
+                          "template": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                          },
+                          "code_length": {
+                            "type": "number",
+                            "minimum": 4,
+                            "maximum": 8,
+                            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": "4",
+                            "maxLength": "8",
+                            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                          }
+                        }
+                      },
+                      {
+                        "title": "WhatsApp Verification",
+                        "type": "object",
+                        "required": [
+                          "channel",
+                          "sender",
+                          "phone",
+                          "template"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "The channel of verification message"
+                          },
+                          "sender": {
+                            "type": "string",
+                            "description": "Name (unique identifier) of the sender"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                          },
+                          "template": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                          },
+                          "code_length": {
+                            "type": "number",
+                            "minimum": 4,
+                            "maximum": 8,
+                            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": "4",
+                            "maxLength": "8",
+                            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                          }
+                        }
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "channel",
+                      "mapping": {
+                        "sms": "#/components/schemas/VerificationSMSPostRequestDto",
+                        "viber": "#/components/schemas/VerificationViberPostRequestDto",
+                        "whatsapp": "#/components/schemas/VerificationWhatsAppPostRequestDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The unique identifier of the account"
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The unique identifier of the message"
+                    },
+                    "phone": {
+                      "type": "string",
+                      "description": "Recipients phone number"
+                    },
+                    "create_date": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Creation date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                    },
+                    "expire_date": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Expiration date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong></p> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1512</td> <td>Invalid template id</td> <td></td> </tr> <tr> <td>1523</td> <td>Invalid recipient number(s)</td> <td></td> </tr> <tr> <td>1620</td> <td>'sender' is missing</td> <td></td> </tr> <tr> <td>1621</td> <td>'phone' is missing</td> <td></td> </tr> <tr> <td>1622</td> <td>'template' is missing</td> <td></td> </tr> <tr> <td>1623</td> <td>Invalid code length</td> <td>The code should be minimum 4,  maximum 8 characters.</td> </tr> <tr> <td>1624</td> <td>Template does not contain keyword {code}</td> <td></td> </tr> <tr> <td>1625</td> <td>'data.from' is blocked</td> <td></td> </tr> <tr> <td>1627</td> <td>Only sms templates are allowed for verification</td> <td></td> </tr> <tr> <td>1628</td> <td>Incompatible template was provided</td> <td>The channel should be the same for template and verification.</td> </tr> <tr> <td>1629</td> <td>Provide either 'data.code' or 'data.code_length' but not both</td> <td></td> </tr> <tr> <td>1632</td> <td>'data.code' should be numeric if provided</td> <td></td> </tr> </table>"
+          },
+          "404": {
+            "description": "<p> <strong>Not Found:</strong> <table> <tr> <th>Code</th> <th>Message</th> </tr> <tr> <td>1513</td> <td>Template is not found</td> </tr> </table>"
+          }
+        }
+      }
+    },
+    "/v1/templates": {
+      "get": {
+        "tags": [
+          "Verification Templates"
+        ],
+        "summary": "Get your Templates",
+        "operationId": "get_templates",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "string",
+              "default": "10",
+              "description": "Default value is 10, can be at maximum 1000"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_token",
+            "schema": {
+              "type": "string",
+              "description": "Found in pagination links and can be used to get 'previous' or 'next' items"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter[channel]",
+            "schema": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "SMS",
+                    "VIBER",
+                    "WHATSAPP"
+                  ]
+                },
+                {
+                  "description": "Filter by Channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                }
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter[name]",
+            "schema": {
+              "type": "string",
+              "description": "Filter(Starts With) Templates by Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter[status]",
+            "description": "Filter Templates by Status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "COMPLETED",
+                "IN_PROCESS",
+                "CANCELED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Unique identifier of the template"
+                          },
+                          "account_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Unique identifier of the account"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "description": "Text of the template may contain variables. Maximum 1000 characters"
+                          },
+                          "channel": {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "SMS",
+                                  "VIBER",
+                                  "WHATSAPP"
+                                ]
+                              },
+                              {
+                                "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                              }
+                            ]
+                          },
+                          "status": {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "COMPLETED",
+                                  "IN_PROCESS",
+                                  "CANCELED"
+                                ]
+                              },
+                              {
+                                "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                              }
+                            ]
+                          },
+                          "type": {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image",
+                                  "video",
+                                  "document"
+                                ]
+                              },
+                              {
+                                "description": "Template type. Enumeration values [text, image, video, document]"
+                              }
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "Template media url for image,video or document types"
+                          },
+                          "filename": {
+                            "type": "string",
+                            "description": "Template filename for document type"
+                          },
+                          "button_type": {
+                            "type": "string",
+                            "description": "WhatsApp Template button type"
+                          },
+                          "button_text": {
+                            "type": "string",
+                            "description": "Template button text"
+                          },
+                          "button_value": {
+                            "type": "string",
+                            "description": "Template button value"
+                          },
+                          "placeholder_count": {
+                            "type": "integer",
+                            "format": "int32",
+                            "description": "Indicates the number of attributes. Values wrapped in {}"
+                          },
+                          "media_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Template media id for image,video or document types"
+                          },
+                          "create_date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                          },
+                          "update_date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Current page number"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Page size. Default value is 10, can be at maximum 1000"
+                        },
+                        "total": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "Total count of requested resources"
+                        },
+                        "links": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "first": {
+                                  "type": "string",
+                                  "description": "URL to the first page"
+                                },
+                                "current": {
+                                  "type": "string",
+                                  "description": "URL to the current page"
+                                },
+                                "previous": {
+                                  "type": "string",
+                                  "description": "URL to the previous page, if any"
+                                },
+                                "next": {
+                                  "type": "string",
+                                  "description": "URL to the next page, if any"
+                                }
+                              }
+                            },
+                            {
+                              "description": "Contains URLs to get next/previous resources"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1257</td> <td>'filter[channel]' value should be: [SMS, VIBER, WHATSAPP]</td> <td></td> </tr> </table>"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Verification Templates"
+        ],
+        "summary": "Create Template",
+        "operationId": "create_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data"
+                ],
+                "properties": {
+                  "data": {
+                    "oneOf": [
+                      {
+                        "title": "SMS Template",
+                        "type": "object",
+                        "required": [
+                          "text",
+                          "channel"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                          },
+                          "name": {
+                            "type": "string",
+                            "maxLength": 50,
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "description": "Text of the template, which should always contain the {code} attribute"
+                          }
+                        }
+                      },
+                      {
+                        "title": "Viber Template",
+                        "type": "object",
+                        "required": [
+                          "text",
+                          "channel",
+                          "type"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text"
+                            ],
+                            "description": "Verification templates can contain only text. Value for type should always be text"
+                          },
+                          "name": {
+                            "type": "string",
+                            "maxLength": 50,
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "description": "Text of the template, which should always contain the {code} attribute"
+                          }
+                        }
+                      },
+                      {
+                        "title": "WhatsApp Template",
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "channel",
+                          "wa_sender_code",
+                          "wa_category",
+                          "text",
+                          "type",
+                          "button_type",
+                          "button_text"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text"
+                            ],
+                            "description": "Verification templates can contain only text. Value for type should always be 'text'"
+                          },
+                          "name": {
+                            "type": "string",
+                            "maxLength": 50,
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "enum": [
+                              "{code} is your verification code"
+                            ],
+                            "description": "Custom text is not supported for WA Verification Templates"
+                          },
+                          "wa_category": {
+                            "type": "string",
+                            "enum": [
+                              "AUTHENTICATION"
+                            ],
+                            "description": "WhatsApp category should always be 'AUTHENTICATION'"
+                          },
+                          "wa_sender_code": {
+                            "type": "string",
+                            "description": "Code (unique identifier) of the WhatsApp sender"
+                          },
+                          "button_type": {
+                            "type": "string",
+                            "enum": [
+                              "copy_code"
+                            ],
+                            "description": "WhatsApp Verification template button_type should always be 'COPY_CODE'"
+                          },
+                          "button_text": {
+                            "type": "string",
+                            "enum": [
+                              "Copy"
+                            ],
+                            "description": "WhatsApp Verification template button_text should always be 'Copy'"
+                          }
+                        }
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "channel",
+                      "mapping": {
+                        "SMS": "#/components/schemas/TemplateSMSPostRequestDto",
+                        "VIBER": "#/components/schemas/TemplateViberPostRequestDto",
+                        "WHATSAPP": "#/components/schemas/TemplateWhatsAppPostRequestDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the template"
+                            },
+                            "account_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the account"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name (unique identifier) of the template"
+                            },
+                            "text": {
+                              "type": "string",
+                              "description": "Text of the template may contain variables. Maximum 1000 characters"
+                            },
+                            "channel": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "SMS",
+                                    "VIBER",
+                                    "WHATSAPP"
+                                  ]
+                                },
+                                {
+                                  "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                                }
+                              ]
+                            },
+                            "status": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPLETED",
+                                    "IN_PROCESS",
+                                    "CANCELED"
+                                  ]
+                                },
+                                {
+                                  "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                                }
+                              ]
+                            },
+                            "type": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "image",
+                                    "video",
+                                    "document"
+                                  ]
+                                },
+                                {
+                                  "description": "Template type. Enumeration values [text, image, video, document]"
+                                }
+                              ]
+                            },
+                            "url": {
+                              "type": "string",
+                              "description": "Template media url for image,video or document types"
+                            },
+                            "filename": {
+                              "type": "string",
+                              "description": "Template filename for document type"
+                            },
+                            "button_type": {
+                              "type": "string",
+                              "description": "WhatsApp Template button type"
+                            },
+                            "button_text": {
+                              "type": "string",
+                              "description": "Template button text"
+                            },
+                            "button_value": {
+                              "type": "string",
+                              "description": "Template button value"
+                            },
+                            "placeholder_count": {
+                              "type": "integer",
+                              "format": "int32",
+                              "description": "Indicates the number of attributes. Values wrapped in {}"
+                            },
+                            "media_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Template media id for image,video or document types"
+                            },
+                            "create_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            },
+                            "update_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "links": {
+                              "allOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "self": {
+                                      "type": "string",
+                                      "description": "URL of the requested resource"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "account": {
+                                      "type": "string",
+                                      "description": "URL of the account"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1241</td> <td>'data.wa_sender_code' required for WhatsApp template</td> <td></td> </tr> <tr> <td>1254</td> <td>'data.text' is required</td> <td>Required for SMS, WhatsApp and Viber(text) templates</td> </tr> <tr> <td>1256</td> <td>'data.channel' is required</td> <td></td> </tr> <tr> <td>1257</td> <td>'data.channel' value should be: [SMS, VIBER, WHATSAPP]</td> <td></td> </tr> <tr> <td>1259</td> <td>'data.name' is invalid</td> <td></td> </tr> <tr> <td>1260</td> <td>'data.text' is too long</td> <td>Text must be at most 1000 characters</td> </tr> <tr> <td>1261</td> <td>'data.name' is required</td> <td>For WhatsApp name is required</td> </tr> <tr> <td>1263</td> <td>'data.name' is too long</td> <td>Name must be at most 45 characters</td> </tr> <tr> <td>1264</td> <td>'data.url' is required</td> <td>Required for image, video and document templates without 'media_id'</td> </tr> <tr> <td>1265</td> <td>'data.url' is too long</td> <td>URL must be at most 2083 characters</td> </tr> <tr> <td>1266</td> <td>'data.url' contains invalid characters</td> <td>URL must be valid</td> </tr> <tr> <td>1267</td> <td>'data.filename' is required</td> <td>Required for document templates</td> </tr> <tr> <td>1268</td> <td>'data.filename' is too long</td> <td>Filename must be at most 25 characters</td> </tr> <tr> <td>1269</td> <td>'data.filename' contains invalid characters</td> <td>Filename must only contain [a-zA-Z0-9_] characters</td> </tr> <tr> <td>1272</td> <td>'data.button_text' is required</td> <td></td> </tr> <tr> <td>1273</td> <td>'date.button_value' is invalid it should be a valid phone number in case of PHONE_CALL type, or valid URL in case of LINK type</td> <td></td> </tr> <tr> <td>1274</td> <td>'data.button_text' too long</td> <td>Button Text must be at most 20 characters</td> </tr> <tr> <td>1275</td> <td>The image can be Max 5 MB, format JPG</td> <td>For WhatsApp image template</td> </tr> <tr> <td>1276</td> <td>The video can be Max 16 MB, format MP4</td> <td>For WhatsApp video template</td> </tr> <tr> <td>1277</td> <td>The document can be Max 100 MB, format PDF</td> <td>For WhatsApp document template</td> </tr> <tr> <td>1278</td> <td>File extension can be only: .bmp, .gif, .jpg, .jpeg, .png, .svg, .webp. maximum size 24 MB</td> <td>For Viber image template</td> </tr> <tr> <td>1279</td> <td>File extension can be only: .3gpp, .m4v, .mov, .mp4. maximum size is 200 MB</td> <td>For Viber video template</td> </tr> <tr> <td>1280</td> <td>File extension can be only: .txt, .doc, .docx, .dot, .dotx, .rtf, .odt, .odf, .fodt, .info.pdf, .xps, .pdax, .eps.xls, .xlsx, .xltx, .xlsm, .csv, .ods, .fods. maximum size 200 MB</td> <td>For Viber document template</td> </tr> <tr> <td>1282</td> <td>URL should start with with 'https://' and have maximum length of 1000 characters</td> <td>For Viber URLs</td> </tr> <tr> <td>1283</td> <td>Document name should be Maximum 25 characters</td> <td>Viber filename must be at most 25 characters</td> </tr> <tr> <td>1284</td> <td>Both 'data.button_value' and 'data.button_text' are required in case one of them specified or both of them must be removed</td> <td>For Viber template with buttons</td> </tr> <tr> <td>1285</td> <td>Text + Image combination not allowed (button is missing)</td> <td>For Viber image template</td> </tr> <tr> <td>1287</td> <td>Image and Text combination not supported by Viber</td> <td>For Viber image template</td> </tr> <tr> <td>1289</td> <td>'data.media_id' is invalid</td> <td>Should be valid UUID</td> </tr> <tr> <td>1291</td> <td>'data.type' is invalid for the selected channel</td> <td>For Viber and Whatsapp should pass valid type</td> </tr> </table>"
+          },
+          "409": {
+            "description": "<p><strong>Conflict:</strong> <table> <tr> <th>Code</th> <th>Message</th> </tr> <tr> <td>1258</td> <td>'data.name' should be unique</td> </tr> </table>"
+          }
+        }
+      }
+    },
+    "/v1/templates/{id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Unique identifier of the resource - {id}"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Verification Templates"
+        ],
+        "summary": "Get single Template",
+        "operationId": "get_template",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the template"
+                            },
+                            "account_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the account"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name (unique identifier) of the template"
+                            },
+                            "text": {
+                              "type": "string",
+                              "description": "Text of the template may contain variables. Maximum 1000 characters"
+                            },
+                            "channel": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "SMS",
+                                    "VIBER",
+                                    "WHATSAPP"
+                                  ]
+                                },
+                                {
+                                  "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                                }
+                              ]
+                            },
+                            "status": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPLETED",
+                                    "IN_PROCESS",
+                                    "CANCELED"
+                                  ]
+                                },
+                                {
+                                  "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                                }
+                              ]
+                            },
+                            "type": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "image",
+                                    "video",
+                                    "document"
+                                  ]
+                                },
+                                {
+                                  "description": "Template type. Enumeration values [text, image, video, document]"
+                                }
+                              ]
+                            },
+                            "url": {
+                              "type": "string",
+                              "description": "Template media url for image,video or document types"
+                            },
+                            "filename": {
+                              "type": "string",
+                              "description": "Template filename for document type"
+                            },
+                            "button_type": {
+                              "type": "string",
+                              "description": "WhatsApp Template button type"
+                            },
+                            "button_text": {
+                              "type": "string",
+                              "description": "Template button text"
+                            },
+                            "button_value": {
+                              "type": "string",
+                              "description": "Template button value"
+                            },
+                            "placeholder_count": {
+                              "type": "integer",
+                              "format": "int32",
+                              "description": "Indicates the number of attributes. Values wrapped in {}"
+                            },
+                            "media_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Template media id for image,video or document types"
+                            },
+                            "create_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            },
+                            "update_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "links": {
+                              "allOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "self": {
+                                      "type": "string",
+                                      "description": "URL of the requested resource"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "account": {
+                                      "type": "string",
+                                      "description": "URL of the account"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "<p><strong>Not Found:</strong> <table> <tr> <th>Code</th> <th>Message</th> </tr> <tr> <td>1251</td> <td>Template not found</td> </tr> </table>"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Verification Templates"
+        ],
+        "summary": "Update single Template",
+        "operationId": "update_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "data"
+                ],
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "oneOf": [
+                      {
+                        "title": "SMS Template",
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 50,
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "description": "Text of the template, which should always contain the {code} attribute"
+                          }
+                        }
+                      },
+                      {
+                        "title": "Viber Template",
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 50,
+                            "description": "Name (unique identifier) of the template"
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "description": "Text of the template, which should always contain the {code} attribute"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the template"
+                            },
+                            "account_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Unique identifier of the account"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name (unique identifier) of the template"
+                            },
+                            "text": {
+                              "type": "string",
+                              "description": "Text of the template may contain variables. Maximum 1000 characters"
+                            },
+                            "channel": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "SMS",
+                                    "VIBER",
+                                    "WHATSAPP"
+                                  ]
+                                },
+                                {
+                                  "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                                }
+                              ]
+                            },
+                            "status": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPLETED",
+                                    "IN_PROCESS",
+                                    "CANCELED"
+                                  ]
+                                },
+                                {
+                                  "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                                }
+                              ]
+                            },
+                            "type": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "image",
+                                    "video",
+                                    "document"
+                                  ]
+                                },
+                                {
+                                  "description": "Template type. Enumeration values [text, image, video, document]"
+                                }
+                              ]
+                            },
+                            "url": {
+                              "type": "string",
+                              "description": "Template media url for image,video or document types"
+                            },
+                            "filename": {
+                              "type": "string",
+                              "description": "Template filename for document type"
+                            },
+                            "button_type": {
+                              "type": "string",
+                              "description": "WhatsApp Template button type"
+                            },
+                            "button_text": {
+                              "type": "string",
+                              "description": "Template button text"
+                            },
+                            "button_value": {
+                              "type": "string",
+                              "description": "Template button value"
+                            },
+                            "placeholder_count": {
+                              "type": "integer",
+                              "format": "int32",
+                              "description": "Indicates the number of attributes. Values wrapped in {}"
+                            },
+                            "media_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Template media id for image,video or document types"
+                            },
+                            "create_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            },
+                            "update_date": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "links": {
+                              "allOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "self": {
+                                      "type": "string",
+                                      "description": "URL of the requested resource"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "account": {
+                                      "type": "string",
+                                      "description": "URL of the account"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1259</td> <td>'data.name' is invalid</td> <td></td> </tr> <tr> <td>1260</td> <td>'data.text' is too long</td> <td>Text must be at most 1000 characters</td> </tr> <tr> <td>1265</td> <td>'data.url' is too long</td> <td>URL must be at most 2083 characters</td> </tr> <tr> <td>1266</td> <td>'data.url' contains invalid characters</td> <td>URL must be valid</td> </tr> <tr> <td>1268</td> <td>'data.filename' is too long</td> <td>Filename must be at most 512 characters</td> </tr> <tr> <td>1269</td> <td>'data.filename' contains invalid characters</td> <td>Filename must only contain [a-zA-Z0-9_] characters</td> </tr> <tr> <td>1273</td> <td>'date.button_value' is invalid it should be a valid phone number in case of PHONE_CALL type, or valid URL in case of LINK type</td> <td></td> </tr> <tr> <td>1274</td> <td>'data.button_text' too long</td> <td>Button Text must be at most 20 characters</td> </tr> <tr> <td>1278</td> <td>File extension can be only: .bmp, .gif, .jpg, .jpeg, .png, .svg, .webp. maximum size 24 MB</td> <td>For Viber image template</td> </tr> <tr> <td>1279</td> <td>File extension can be only: .3gpp, .m4v, .mov, .mp4. maximum size is 200 MB</td> <td>For Viber video template</td> </tr> <tr> <td>1280</td> <td>File extension can be only: .txt, .doc, .docx, .dot, .dotx, .rtf, .odt, .odf, .fodt, .info.pdf, .xps, .pdax, .eps.xls, .xlsx, .xltx, .xlsm, .csv, .ods, .fods. maximum size 200 MB</td> <td>For Viber document template</td> </tr> <tr> <td>1282</td> <td>URL should start with with 'https://' and have maximum length of 1000 characters</td> <td>For Viber URLs</td> </tr> <tr> <td>1283</td> <td>Document name should be Maximum 25 characters</td> <td>Viber filename must be at most 25 characters</td> </tr> <tr> <td>1284</td> <td>Both 'data.button_value' and 'data.button_text' are required in case one of them specified or both of them must be removed</td> <td>For Viber template with buttons</td> </tr> <tr> <td>1285</td> <td>Text + Image combination not allowed (button is missing)</td> <td>For Viber image template</td> </tr> <tr> <td>1287</td> <td>Image and Text combination not supported by Viber</td> <td>For Viber image template</td> </tr> <tr> <td>1289</td> <td>'data.media_id' is invalid</td> <td>Should be valid UUID</td> </tr> <tr> <td>1293</td> <td>Unable to remove 'data.text' when the template type is 'text'</td> <td>Text can't be removed for Viber(text) template</td> </tr> <tr> <td>1294</td> <td>Unable to update 'data.filename' when the template type is 'data.image' or 'data.video'</td> <td>Only Viber document template can have filename</td> </tr> <tr> <td>1295</td> <td>Either 'data.media_id' or 'data.url' must be provided</td> <td>For image, video or document templates can't remove both values</td> </tr> <tr> <td>1298</td> <td>For 'data.type: video' only 'data.media_id'/'data.url', 'data.name' can be updated</td> <td>Viber video template do not support 'button_text', 'button_value' and 'filename'</td> </tr> <tr> <td>1299</td> <td>For 'data.type: document' only 'data.filename', 'data.media_id'/'data.url', 'data.name' can be updated</td> <td>Viber document template do not support 'text', 'button_text' and 'button_value'</td> </tr> <tr> <td>1300</td> <td>The combination is not supported. Possible combinations include image, text and button</td> <td></td> </tr> <tr> <td>1301</td> <td>'data.button_type' unknown field</td> <td></td> </tr> <tr> <td>1305</td> <td>'data.filename' can't be removed from 'Document' template</td> <td>For document templates can't remove filename value</td> </tr> </table>"
+          },
+          "404": {
+            "description": "<p><strong>Not Found:</strong> <table> <tr> <th>Code</th> <th>Message</th> </tr> <tr> <td>1251</td> <td>Template not found</td> </tr> </table>"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Verification Templates"
+        ],
+        "summary": "Delete single Template",
+        "operationId": "delete_template",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "<p><strong>Bad Request:</strong> <table> <tr> <th>Code</th> <th>Message</th> <th>Description</th> </tr> <tr> <td>1271</td> <td>Pending template can not be deleted</td> <td>WhatsApp templates that are under review process can't be deleted</td> </tr> </table>"
+          },
+          "404": {
+            "description": "<p><strong>Not Found:</strong> <table> <tr> <th>Code</th> <th>Message</th> </tr> <tr> <td>1251</td> <td>Template not found</td> </tr> </table>"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "id": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "description": "Unique identifier of the resource - {id}"
+        }
+      },
+      "page_size": {
+        "in": "query",
+        "name": "page_size",
+        "schema": {
+          "type": "string",
+          "default": "10",
+          "description": "Default value is 10, can be at maximum 1000"
+        }
+      },
+      "page_token": {
+        "in": "query",
+        "name": "page_token",
+        "schema": {
+          "type": "string",
+          "description": "Found in pagination links and can be used to get 'previous' or 'next' items"
+        }
+      },
+      "code": {
+        "name": "code",
+        "in": "query",
+        "description": "The searched verification code",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "filter.channel": {
+        "in": "query",
+        "name": "filter[channel]",
+        "schema": {
+          "allOf": [
+            {
+              "type": "string",
+              "enum": [
+                "SMS",
+                "VIBER",
+                "WHATSAPP"
+              ]
+            },
+            {
+              "description": "Filter by Channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+            }
+          ]
+        }
+      },
+      "filter.template_name": {
+        "in": "query",
+        "name": "filter[name]",
+        "schema": {
+          "type": "string",
+          "description": "Filter(Starts With) Templates by Name"
+        }
+      },
+      "filter.status": {
+        "in": "query",
+        "name": "filter[status]",
+        "description": "Filter Templates by Status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "COMPLETED",
+            "IN_PROCESS",
+            "CANCELED"
+          ]
+        }
+      }
+    },
+    "responses": {
+      "204": {
+        "description": "No Content"
+      }
+    },
+    "schemas": {
+      "EnumChannels": {
+        "type": "string",
+        "enum": [
+          "SMS",
+          "VIBER",
+          "WHATSAPP"
+        ]
+      },
+      "EnumTemplateStatuses": {
+        "type": "string",
+        "enum": [
+          "COMPLETED",
+          "IN_PROCESS",
+          "CANCELED"
+        ]
+      },
+      "EnumTemplateTypes": {
+        "type": "string",
+        "enum": [
+          "text",
+          "image",
+          "video",
+          "document"
+        ]
+      },
+      "VerificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the account"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the message"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Recipients phone number"
+          },
+          "create_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+          },
+          "expire_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+          }
+        }
+      },
+      "VerificationResponseListWrapperDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "account_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "The unique identifier of the account"
+                },
+                "message_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "The unique identifier of the message"
+                },
+                "phone": {
+                  "type": "string",
+                  "description": "Recipients phone number"
+                },
+                "create_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Creation date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                },
+                "expire_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Expiration date of the verification in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                }
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Current page number"
+              },
+              "size": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Page size. Default value is 10, can be at maximum 1000"
+              },
+              "total": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Total count of requested resources"
+              },
+              "links": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "first": {
+                        "type": "string",
+                        "description": "URL to the first page"
+                      },
+                      "current": {
+                        "type": "string",
+                        "description": "URL to the current page"
+                      },
+                      "previous": {
+                        "type": "string",
+                        "description": "URL to the previous page, if any"
+                      },
+                      "next": {
+                        "type": "string",
+                        "description": "URL to the next page, if any"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Contains URLs to get next/previous resources"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "VerificationPostRequestWrapperDto": {
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "oneOf": [
+              {
+                "title": "SMS Verification",
+                "type": "object",
+                "required": [
+                  "channel",
+                  "sender",
+                  "phone",
+                  "template"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "The channel of verification message"
+                  },
+                  "sender": {
+                    "type": "string",
+                    "description": "Name (unique identifier) of the sender"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                  },
+                  "template": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                  },
+                  "code_length": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 8,
+                    "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": "4",
+                    "maxLength": "8",
+                    "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                  }
+                }
+              },
+              {
+                "title": "Viber Verification",
+                "type": "object",
+                "required": [
+                  "channel",
+                  "sender",
+                  "phone",
+                  "template"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "The channel of verification message"
+                  },
+                  "sender": {
+                    "type": "string",
+                    "description": "Name (unique identifier) of the sender"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                  },
+                  "template": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                  },
+                  "code_length": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 8,
+                    "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": "4",
+                    "maxLength": "8",
+                    "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                  }
+                }
+              },
+              {
+                "title": "WhatsApp Verification",
+                "type": "object",
+                "required": [
+                  "channel",
+                  "sender",
+                  "phone",
+                  "template"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "The channel of verification message"
+                  },
+                  "sender": {
+                    "type": "string",
+                    "description": "Name (unique identifier) of the sender"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+                  },
+                  "template": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The unique identifier of the template, which should always contain the {code} attribute"
+                  },
+                  "code_length": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 8,
+                    "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": "4",
+                    "maxLength": "8",
+                    "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+                  }
+                }
+              }
+            ],
+            "discriminator": {
+              "propertyName": "channel",
+              "mapping": {
+                "sms": "#/components/schemas/VerificationSMSPostRequestDto",
+                "viber": "#/components/schemas/VerificationViberPostRequestDto",
+                "whatsapp": "#/components/schemas/VerificationWhatsAppPostRequestDto"
+              }
+            }
+          }
+        }
+      },
+      "VerificationSMSPostRequestDto": {
+        "title": "SMS Verification",
+        "type": "object",
+        "required": [
+          "channel",
+          "sender",
+          "phone",
+          "template"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "The channel of verification message"
+          },
+          "sender": {
+            "type": "string",
+            "description": "Name (unique identifier) of the sender"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+          },
+          "code_length": {
+            "type": "number",
+            "minimum": 4,
+            "maximum": 8,
+            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+          },
+          "code": {
+            "type": "string",
+            "minLength": "4",
+            "maxLength": "8",
+            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+          }
+        }
+      },
+      "VerificationViberPostRequestDto": {
+        "title": "Viber Verification",
+        "type": "object",
+        "required": [
+          "channel",
+          "sender",
+          "phone",
+          "template"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "The channel of verification message"
+          },
+          "sender": {
+            "type": "string",
+            "description": "Name (unique identifier) of the sender"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+          },
+          "code_length": {
+            "type": "number",
+            "minimum": 4,
+            "maximum": 8,
+            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+          },
+          "code": {
+            "type": "string",
+            "minLength": "4",
+            "maxLength": "8",
+            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+          }
+        }
+      },
+      "VerificationWhatsAppPostRequestDto": {
+        "title": "WhatsApp Verification",
+        "type": "object",
+        "required": [
+          "channel",
+          "sender",
+          "phone",
+          "template"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "The channel of verification message"
+          },
+          "sender": {
+            "type": "string",
+            "description": "Name (unique identifier) of the sender"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the template, which should always contain the {code} attribute"
+          },
+          "code_length": {
+            "type": "number",
+            "minimum": 4,
+            "maximum": 8,
+            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+          },
+          "code": {
+            "type": "string",
+            "minLength": "4",
+            "maxLength": "8",
+            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+          }
+        }
+      },
+      "VerificationVoicePostRequestDto": {
+        "title": "Voice Verifications",
+        "type": "object",
+        "required": [
+          "channel",
+          "phone"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "The channel of verification message"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number as digits without spaces or special characters, beginning with the country dialing code"
+          },
+          "code_length": {
+            "type": "number",
+            "minimum": 4,
+            "maximum": 8,
+            "description": "The length of the code, which falls within the range of 4 to 8 characters. At least one of the following is required: 'code_length' or 'code'."
+          },
+          "code": {
+            "type": "string",
+            "minLength": "4",
+            "maxLength": "8",
+            "description": "The 'code' field accepts only digits and must be between 4 to 8 characters in length. At least one of the following is required: 'code_length' or 'code'."
+          }
+        }
+      },
+      "TemplateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier of the template"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier of the account"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text of the template may contain variables. Maximum 1000 characters"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SMS",
+                  "VIBER",
+                  "WHATSAPP"
+                ]
+              },
+              {
+                "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "COMPLETED",
+                  "IN_PROCESS",
+                  "CANCELED"
+                ]
+              },
+              {
+                "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+              }
+            ]
+          },
+          "type": {
+            "allOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "image",
+                  "video",
+                  "document"
+                ]
+              },
+              {
+                "description": "Template type. Enumeration values [text, image, video, document]"
+              }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "Template media url for image,video or document types"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Template filename for document type"
+          },
+          "button_type": {
+            "type": "string",
+            "description": "WhatsApp Template button type"
+          },
+          "button_text": {
+            "type": "string",
+            "description": "Template button text"
+          },
+          "button_value": {
+            "type": "string",
+            "description": "Template button value"
+          },
+          "placeholder_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Indicates the number of attributes. Values wrapped in {}"
+          },
+          "media_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Template media id for image,video or document types"
+          },
+          "create_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+          },
+          "update_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+          }
+        }
+      },
+      "TemplateResponseListWrapperDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Unique identifier of the template"
+                },
+                "account_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Unique identifier of the account"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Name (unique identifier) of the template"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Text of the template may contain variables. Maximum 1000 characters"
+                },
+                "channel": {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "SMS",
+                        "VIBER",
+                        "WHATSAPP"
+                      ]
+                    },
+                    {
+                      "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                    }
+                  ]
+                },
+                "status": {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "COMPLETED",
+                        "IN_PROCESS",
+                        "CANCELED"
+                      ]
+                    },
+                    {
+                      "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                    }
+                  ]
+                },
+                "type": {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "image",
+                        "video",
+                        "document"
+                      ]
+                    },
+                    {
+                      "description": "Template type. Enumeration values [text, image, video, document]"
+                    }
+                  ]
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Template media url for image,video or document types"
+                },
+                "filename": {
+                  "type": "string",
+                  "description": "Template filename for document type"
+                },
+                "button_type": {
+                  "type": "string",
+                  "description": "WhatsApp Template button type"
+                },
+                "button_text": {
+                  "type": "string",
+                  "description": "Template button text"
+                },
+                "button_value": {
+                  "type": "string",
+                  "description": "Template button value"
+                },
+                "placeholder_count": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "Indicates the number of attributes. Values wrapped in {}"
+                },
+                "media_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Template media id for image,video or document types"
+                },
+                "create_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                },
+                "update_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                }
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Current page number"
+              },
+              "size": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Page size. Default value is 10, can be at maximum 1000"
+              },
+              "total": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Total count of requested resources"
+              },
+              "links": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "first": {
+                        "type": "string",
+                        "description": "URL to the first page"
+                      },
+                      "current": {
+                        "type": "string",
+                        "description": "URL to the current page"
+                      },
+                      "previous": {
+                        "type": "string",
+                        "description": "URL to the previous page, if any"
+                      },
+                      "next": {
+                        "type": "string",
+                        "description": "URL to the next page, if any"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Contains URLs to get next/previous resources"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "TemplateResponseWrapperDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Unique identifier of the template"
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Unique identifier of the account"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Text of the template may contain variables. Maximum 1000 characters"
+                  },
+                  "channel": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "SMS",
+                          "VIBER",
+                          "WHATSAPP"
+                        ]
+                      },
+                      {
+                        "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "COMPLETED",
+                          "IN_PROCESS",
+                          "CANCELED"
+                        ]
+                      },
+                      {
+                        "description": "Template status. Enumeration values [COMPLETED, IN_PROCESS, CANCELED]"
+                      }
+                    ]
+                  },
+                  "type": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "text",
+                          "image",
+                          "video",
+                          "document"
+                        ]
+                      },
+                      {
+                        "description": "Template type. Enumeration values [text, image, video, document]"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "Template media url for image,video or document types"
+                  },
+                  "filename": {
+                    "type": "string",
+                    "description": "Template filename for document type"
+                  },
+                  "button_type": {
+                    "type": "string",
+                    "description": "WhatsApp Template button type"
+                  },
+                  "button_text": {
+                    "type": "string",
+                    "description": "Template button text"
+                  },
+                  "button_value": {
+                    "type": "string",
+                    "description": "Template button value"
+                  },
+                  "placeholder_count": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Indicates the number of attributes. Values wrapped in {}"
+                  },
+                  "media_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Template media id for image,video or document types"
+                  },
+                  "create_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Creation date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                  },
+                  "update_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Update date of the template in UTC, formatted as yyyy-mm-dd hh:mm:ss"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "links": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "self": {
+                            "type": "string",
+                            "description": "URL of the requested resource"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "account": {
+                            "type": "string",
+                            "description": "URL of the account"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "TemplatePostRequestWrapperDto": {
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "oneOf": [
+              {
+                "title": "SMS Template",
+                "type": "object",
+                "required": [
+                  "text",
+                  "channel"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Text of the template, which should always contain the {code} attribute"
+                  }
+                }
+              },
+              {
+                "title": "Viber Template",
+                "type": "object",
+                "required": [
+                  "text",
+                  "channel",
+                  "type"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text"
+                    ],
+                    "description": "Verification templates can contain only text. Value for type should always be text"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Text of the template, which should always contain the {code} attribute"
+                  }
+                }
+              },
+              {
+                "title": "WhatsApp Template",
+                "type": "object",
+                "required": [
+                  "name",
+                  "channel",
+                  "wa_sender_code",
+                  "wa_category",
+                  "text",
+                  "type",
+                  "button_type",
+                  "button_text"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string",
+                    "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text"
+                    ],
+                    "description": "Verification templates can contain only text. Value for type should always be 'text'"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "enum": [
+                      "{code} is your verification code"
+                    ],
+                    "description": "Custom text is not supported for WA Verification Templates"
+                  },
+                  "wa_category": {
+                    "type": "string",
+                    "enum": [
+                      "AUTHENTICATION"
+                    ],
+                    "description": "WhatsApp category should always be 'AUTHENTICATION'"
+                  },
+                  "wa_sender_code": {
+                    "type": "string",
+                    "description": "Code (unique identifier) of the WhatsApp sender"
+                  },
+                  "button_type": {
+                    "type": "string",
+                    "enum": [
+                      "copy_code"
+                    ],
+                    "description": "WhatsApp Verification template button_type should always be 'COPY_CODE'"
+                  },
+                  "button_text": {
+                    "type": "string",
+                    "enum": [
+                      "Copy"
+                    ],
+                    "description": "WhatsApp Verification template button_text should always be 'Copy'"
+                  }
+                }
+              }
+            ],
+            "discriminator": {
+              "propertyName": "channel",
+              "mapping": {
+                "SMS": "#/components/schemas/TemplateSMSPostRequestDto",
+                "VIBER": "#/components/schemas/TemplateViberPostRequestDto",
+                "WHATSAPP": "#/components/schemas/TemplateWhatsAppPostRequestDto"
+              }
+            }
+          }
+        }
+      },
+      "TemplateSMSPostRequestDto": {
+        "title": "SMS Template",
+        "type": "object",
+        "required": [
+          "text",
+          "channel"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text of the template, which should always contain the {code} attribute"
+          }
+        }
+      },
+      "TemplateViberPostRequestDto": {
+        "title": "Viber Template",
+        "type": "object",
+        "required": [
+          "text",
+          "channel",
+          "type"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text"
+            ],
+            "description": "Verification templates can contain only text. Value for type should always be text"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text of the template, which should always contain the {code} attribute"
+          }
+        }
+      },
+      "TemplateWhatsAppPostRequestDto": {
+        "title": "WhatsApp Template",
+        "type": "object",
+        "required": [
+          "name",
+          "channel",
+          "wa_sender_code",
+          "wa_category",
+          "text",
+          "type",
+          "button_type",
+          "button_text"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "Template channel. Enumeration values [SMS, VIBER, WHATSAPP]"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text"
+            ],
+            "description": "Verification templates can contain only text. Value for type should always be 'text'"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "enum": [
+              "{code} is your verification code"
+            ],
+            "description": "Custom text is not supported for WA Verification Templates"
+          },
+          "wa_category": {
+            "type": "string",
+            "enum": [
+              "AUTHENTICATION"
+            ],
+            "description": "WhatsApp category should always be 'AUTHENTICATION'"
+          },
+          "wa_sender_code": {
+            "type": "string",
+            "description": "Code (unique identifier) of the WhatsApp sender"
+          },
+          "button_type": {
+            "type": "string",
+            "enum": [
+              "copy_code"
+            ],
+            "description": "WhatsApp Verification template button_type should always be 'COPY_CODE'"
+          },
+          "button_text": {
+            "type": "string",
+            "enum": [
+              "Copy"
+            ],
+            "description": "WhatsApp Verification template button_text should always be 'Copy'"
+          }
+        }
+      },
+      "TemplatePutRequestWrapperDto": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "oneOf": [
+              {
+                "title": "SMS Template",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Text of the template, which should always contain the {code} attribute"
+                  }
+                }
+              },
+              {
+                "title": "Viber Template",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Name (unique identifier) of the template"
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Text of the template, which should always contain the {code} attribute"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "TemplateSMSPutRequestDto": {
+        "title": "SMS Template",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text of the template, which should always contain the {code} attribute"
+          }
+        }
+      },
+      "TemplateViberPutRequestDto": {
+        "title": "Viber Template",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Name (unique identifier) of the template"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text of the template, which should always contain the {code} attribute"
+          }
+        }
+      },
+      "LinksSelf": {
+        "type": "object",
+        "properties": {
+          "self": {
+            "type": "string",
+            "description": "URL of the requested resource"
+          }
+        }
+      },
+      "LinksAccount": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string",
+            "description": "URL of the account"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current page number"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Page size. Default value is 10, can be at maximum 1000"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total count of requested resources"
+          },
+          "links": {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "first": {
+                    "type": "string",
+                    "description": "URL to the first page"
+                  },
+                  "current": {
+                    "type": "string",
+                    "description": "URL to the current page"
+                  },
+                  "previous": {
+                    "type": "string",
+                    "description": "URL to the previous page, if any"
+                  },
+                  "next": {
+                    "type": "string",
+                    "description": "URL to the next page, if any"
+                  }
+                }
+              },
+              {
+                "description": "Contains URLs to get next/previous resources"
+              }
+            ]
+          }
+        }
+      },
+      "PaginationLinks": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": "string",
+            "description": "URL to the first page"
+          },
+          "current": {
+            "type": "string",
+            "description": "URL to the current page"
+          },
+          "previous": {
+            "type": "string",
+            "description": "URL to the previous page, if any"
+          },
+          "next": {
+            "type": "string",
+            "description": "URL to the next page, if any"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Dexatel-Key"
+      }
+    }
+  },
+  "x-readme": {
+    "explorer-enabled": true,
+    "proxy-enabled": true,
+    "samples-enabled": true
+  }
+}

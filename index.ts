@@ -31,7 +31,7 @@ import { groupsSocket, userSockets, chatSocket } from './src/sockets/userSockets
 import DeviceDetector from 'node-device-detector';
 
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
-import sendPushNotifications from './src/helpers/sendPushNotification';
+
 const app = express();
 const server = http.createServer(app);
 

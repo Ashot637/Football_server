@@ -53,7 +53,7 @@ router.post(
 );
 
 router.get(
-  '/team/my',
+  '/team/myTeam',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   TeamController.getMyTeams,
 );

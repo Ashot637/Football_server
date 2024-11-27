@@ -226,26 +226,23 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     const { id } = req.user;
 
     const teams = await TeamPlayer.findAll({
-      where: {
-        userId: id,
-      },
+      where: { userId: id },
       include: {
         model: Team,
-        as: 'team',
+        as: 'team', // Убедитесь, что ассоциация настроена правильно
       },
     });
-    if (!teams) {
-      return res.status(400).json({ success: false });
+
+    if (!teams.length) {
+      return res.status(404).json({ success: false, message: 'No teams found' });
     }
-    console.log('=====================================');
-    console.log(teams);
-    console.log('=====================================');
 
     res.status(200).json({ success: true, teams });
   } catch (error) {
     next(error);
   }
 };
+
 export default {
   create,
   getAll,

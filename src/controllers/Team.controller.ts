@@ -14,6 +14,7 @@ import sendPushNotifications from '../helpers/sendPushNotification';
 import { INVITATION_TYPES } from '../models/Invitation.model';
 
 import { Op } from 'sequelize';
+import { error } from 'console';
 
 const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -236,6 +237,9 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     if (!teams) {
       return res.status(400).json({ success: false });
     }
+    console.log('=====================================');
+    console.log(teams);
+    console.log('=====================================');
 
     res.status(200).json({ success: true, teams });
   } catch (error) {

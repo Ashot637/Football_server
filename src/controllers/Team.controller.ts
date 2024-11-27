@@ -13,6 +13,8 @@ import type { RequestWithUser } from '../types/RequestWithUser';
 import sendPushNotifications from '../helpers/sendPushNotification';
 import { INVITATION_TYPES } from '../models/Invitation.model';
 
+import { Op } from 'sequelize';
+
 const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
@@ -213,6 +215,32 @@ const inviteTeamtoGame = async (req: RequestWithUser, res: Response, next: NextF
     next(error);
   }
 };
+
+const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const { id } = req.user;
+
+    const teams = await TeamPlayer.findAll({ where: { userId: id } });
+
+    const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
+
+    const userTeams = await Team.findAll({
+      where: {
+        id: {
+          [Op.in]: teamIds,
+        },
+      },
+    });
+
+    res.status(200).json({ success: true, teams: userTeams });
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   create,
   getAll,
@@ -223,4 +251,5 @@ export default {
   leaveFromTeam,
   getOneTeam,
   inviteTeamtoGame,
+  getMyTeams,
 };

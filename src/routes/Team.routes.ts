@@ -52,4 +52,9 @@ router.post(
   TeamController.inviteTeamtoGame,
 );
 
+router.get(
+  '/team/my',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getMyTeams,
+);
 export default router;

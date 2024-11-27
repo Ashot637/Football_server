@@ -46,4 +46,10 @@ router.post(
   TeamController.leaveFromTeam,
 );
 
+router.post(
+  '/team/invite',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.inviteTeamtoGame,
+);
+
 export default router;

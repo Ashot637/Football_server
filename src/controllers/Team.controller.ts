@@ -1,7 +1,17 @@
 import type { NextFunction, Request, Response } from 'express';
-import { Team, TeamChat, TeamGame, TeamPlayer, UserForChat, UserGroup } from '../models';
+import {
+  Invitation,
+  Team,
+  TeamChat,
+  TeamGame,
+  TeamPlayer,
+  UserForChat,
+  UserGroup,
+} from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
+import sendPushNotifications from '../helpers/sendPushNotification';
+import { INVITATION_TYPES } from '../models/Invitation.model';
 
 const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -172,6 +182,37 @@ const leaveFromTeam = async (req: RequestWithUser, res: Response, next: NextFunc
     next(error);
   }
 };
+
+const inviteTeamtoGame = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const ipAddress = req.headers['x-forwarded-for'] as string;
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id } = req.user;
+    const { teamId, gameId } = req.body;
+    const teamOwner = await Team.findOne({ where: { userId: id } });
+    if (!teamOwner) {
+      return res.status(400).json({ success: false });
+    }
+    const team = await Team.findOne({ where: { id: teamId } });
+    if (!team) {
+      return res.status(400).json({ success: false });
+    }
+    Invitation.create({
+      ip: ipAddress,
+      teamId,
+      gameId,
+      from: teamOwner.name,
+      type: INVITATION_TYPES.TEAM,
+    });
+    await sendPushNotifications([String(team?.userId)], 'Your Team invited to game');
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   create,
   getAll,
@@ -181,4 +222,5 @@ export default {
   reamoveForTeam,
   leaveFromTeam,
   getOneTeam,
+  inviteTeamtoGame,
 };

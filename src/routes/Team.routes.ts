@@ -36,6 +36,12 @@ router.delete(
 );
 
 router.get(
+  '/team/my',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getMyTeams,
+);
+
+router.get(
   '/team/:id',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   TeamController.getOneTeam,
@@ -52,9 +58,4 @@ router.post(
   TeamController.inviteTeamtoGame,
 );
 
-router.get(
-  '/team/myTeam',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getMyTeams,
-);
 export default router;

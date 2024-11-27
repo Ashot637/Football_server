@@ -225,13 +225,19 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     const { id } = req.user;
 
     const teams = await TeamPlayer.findAll({ where: { userId: id } });
-    console.log('========================================================================');
-
-    console.log(teams);
-    console.log('========================================================================');
+    if (!teams) {
+      return res.status(400).json({ success: false });
+    }
 
     const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
 
+    if (!teamIds) {
+      return res.status(400).json({ success: false });
+    }
+    console.log('========================================================================');
+
+    console.log(teams, '                ', teamIds);
+    console.log('========================================================================');
     const userTeams = await Team.findAll({
       where: {
         id: {

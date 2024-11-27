@@ -225,12 +225,12 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     const { id } = req.user;
 
     const teams = await TeamPlayer.findAll({ where: { userId: id } });
+    console.log('========================================================================');
+
+    console.log(teams);
+    console.log('========================================================================');
 
     const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
-    console.log('========================================================================');
-
-    console.log(teamIds);
-    console.log('========================================================================');
 
     const userTeams = await Team.findAll({
       where: {

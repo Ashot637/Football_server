@@ -227,6 +227,10 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     const teams = await TeamPlayer.findAll({ where: { userId: id } });
 
     const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
+    console.log('========================================================================');
+
+    console.log(teamIds);
+    console.log('========================================================================');
 
     const userTeams = await Team.findAll({
       where: {

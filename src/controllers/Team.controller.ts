@@ -246,7 +246,7 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
       where: { id: teamIds },
     });
 
-    res.status(200).json({ success: true, teams });
+    res.status(200).json({ success: true, teams: teamDetails });
   } catch (error) {
     next(error);
   }

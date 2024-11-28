@@ -31,7 +31,12 @@ const create = async (req: RequestWithUser, res: Response, next: NextFunction) =
     });
 
     if (created) {
-      const teamPlayer = await TeamPlayer.findAll({ where: { teamId: team.id } });
+      await TeamPlayer.create({
+        teamId: team.id,
+        userId: id,
+        playerPosition: null,
+        playerStatus: null,
+      });
       const teamChat = await TeamChat.create({
         lastMessageTimestamp: new Date(),
         forPublic: false,
@@ -227,15 +232,19 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
 
     const teams = await TeamPlayer.findAll({
       where: { userId: id },
-      include: {
-        model: Team,
-        as: 'team', // Убедитесь, что ассоциация настроена правильно
-      },
     });
 
-    if (!teams.length) {
-      return res.status(404).json({ success: false, message: 'No teams found' });
-    }
+    // if (!teams.length) {
+    //   return res.status(404).json({ success: false, message: 'No teams found' });
+    // }
+
+    // // Extract team IDs from the TeamPlayer instances
+    // const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
+
+    // // Fetch the teams based on those IDs
+    // const teamDetails = await Team.findAll({
+    //   where: { id: teamIds },
+    // });
 
     res.status(200).json({ success: true, teams });
   } catch (error) {

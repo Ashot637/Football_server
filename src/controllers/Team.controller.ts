@@ -234,17 +234,17 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
       where: { userId: id },
     });
 
-    // if (!teams.length) {
-    //   return res.status(404).json({ success: false, message: 'No teams found' });
-    // }
+    if (!teams.length) {
+      return res.status(404).json({ success: false, message: 'No teams found' });
+    }
 
-    // // Extract team IDs from the TeamPlayer instances
-    // const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
+    // Extract team IDs from the TeamPlayer instances
+    const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
 
-    // // Fetch the teams based on those IDs
-    // const teamDetails = await Team.findAll({
-    //   where: { id: teamIds },
-    // });
+    // Fetch the teams based on those IDs
+    const teamDetails = await Team.findAll({
+      where: { id: teamIds },
+    });
 
     res.status(200).json({ success: true, teams });
   } catch (error) {

@@ -41,11 +41,7 @@ router.get(
   TeamController.getMyTeams,
 );
 
-router.get(
-  '/team/:id',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getOneTeam,
-);
+
 router.post(
   '/team/leave',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
@@ -62,6 +58,13 @@ router.post(
   '/team/acceptInvitation',
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
   TeamController.acceptInvitation,
+);
+
+
+router.get(
+  '/team/:id',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.getOneTeam,
 );
 
 export default router;

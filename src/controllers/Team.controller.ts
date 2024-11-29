@@ -201,7 +201,7 @@ const inviteTeamtoGame = async (req: RequestWithUser, res: Response, next: NextF
     const { id } = req.user;
     const { teamId, gameId } = req.body;
     const teamOwner = await Team.findOne({ where: { userId: id } });
-    if (!teamOwner) {
+  if (!teamOwner) {
       return res.status(400).json({ success: false });
     }
     const team = await Team.findOne({ where: { id: teamId } });

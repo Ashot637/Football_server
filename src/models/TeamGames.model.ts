@@ -5,10 +5,10 @@ interface TeamGameAttributes {
   id: number;
   teamId: number;
   gameId: number;
-  result: string;
-  isWinner: boolean;
-  goalsCount: number;
-  draw: boolean;
+  result?: string;
+  isWinner?: boolean;
+  goalsCount?: number;
+  draw?: boolean;
 }
 
 interface TeamGameCreationAttributes extends Optional<TeamGameAttributes, 'id'> {}

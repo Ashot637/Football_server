@@ -58,4 +58,10 @@ router.post(
   TeamController.inviteTeamtoGame,
 );
 
+router.post(
+  '/team/acceptInvitation',
+  checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
+  TeamController.acceptInvitation,
+);
+
 export default router;

@@ -238,10 +238,8 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
       return res.status(404).json({ success: false, message: 'No teams found' });
     }
 
-    // Extract team IDs from the TeamPlayer instances
     const teamIds = teams.map((teamPlayer) => teamPlayer.teamId);
 
-    // Fetch the teams based on those IDs
     const teamDetails = await Team.findAll({
       where: { id: teamIds },
     });
@@ -251,7 +249,54 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     next(error);
   }
 };
+const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id, gameId } = req.body;
 
+    const invitation = await Invitation.findOne({
+      where: {
+        id,
+      },
+    });
+    if (!invitation) {
+      return res.status(404).json({ success: false });
+    }
+    const userTeams = await TeamPlayer.findAll({ where: { userId } });
+
+    for (const userTeam of userTeams) {
+      if (userTeam.id == id) {
+        return res.status(409).json({ success: false });
+      }
+    }
+    const teams = await Team.findAll({
+      where: {
+        id: invitation.teamId,
+      },
+    });
+
+    for (const team of teams) {
+      const teamGame = await TeamGame.findOne({
+        where: {
+          teamId: team.id,
+          gameId: gameId,
+        },
+      });
+
+      if (!teamGame) {
+        await TeamGame.create({
+          teamId: team.id,
+          gameId: +gameId,
+        });
+      }
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   create,
   getAll,
@@ -263,4 +308,5 @@ export default {
   getOneTeam,
   inviteTeamtoGame,
   getMyTeams,
+  acceptInvitation,
 };

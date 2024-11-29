@@ -7,6 +7,7 @@ import {
   TeamPlayer,
   UserForChat,
   UserGroup,
+  Notification,
 } from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
@@ -201,20 +202,37 @@ const inviteTeamtoGame = async (req: RequestWithUser, res: Response, next: NextF
     const { id } = req.user;
     const { teamId, gameId } = req.body;
     const teamOwner = await Team.findOne({ where: { userId: id } });
-  if (!teamOwner) {
+    if (!teamOwner) {
       return res.status(400).json({ success: false });
     }
     const team = await Team.findOne({ where: { id: teamId } });
     if (!team) {
       return res.status(400).json({ success: false });
     }
-    Invitation.create({
-      ip: ipAddress,
+    await Invitation.findOrCreate({
+      where: {
+        ip: ipAddress,
+        teamId,
+        gameId,
+        from: teamOwner.name,
+        type: INVITATION_TYPES.TEAM,
+      },
+      defaults: {
+        ip: ipAddress,
+        teamId,
+        gameId,
+        from: teamOwner.name,
+        type: INVITATION_TYPES.TEAM,
+      },
+    });
+
+    await Notification.create({
+      isNew: true,
+      userId: team.userId,
       teamId,
       gameId,
-      from: teamOwner.name,
-      type: INVITATION_TYPES.TEAM,
     });
+
     await sendPushNotifications([String(team?.userId)], 'Your Team invited to game');
     return res.status(201).json({ success: true });
   } catch (error) {

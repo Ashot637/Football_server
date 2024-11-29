@@ -1,6 +1,6 @@
-import { Model, Optional, DataTypes } from "sequelize";
-import sequelize from "../db";
-import { INVITATION_TYPES } from "./Invitation.model";
+import { Model, Optional, DataTypes } from 'sequelize';
+import sequelize from '../db';
+import { INVITATION_TYPES } from './Invitation.model';
 
 interface NotificationAttributes {
   id: number;
@@ -8,12 +8,12 @@ interface NotificationAttributes {
   userId: number;
   isNew?: boolean;
   groupId?: number;
+  teamId?: number;
   type?: INVITATION_TYPES;
   disabled?: boolean;
 }
 
-interface NotificationCreationAttributes
-  extends Optional<NotificationAttributes, "id"> {}
+interface NotificationCreationAttributes extends Optional<NotificationAttributes, 'id'> {}
 
 class Notification
   extends Model<NotificationAttributes, NotificationCreationAttributes>
@@ -24,10 +24,9 @@ class Notification
   public userId!: number;
   public isNew!: boolean;
   public groupId?: number;
+  public teamId?: number;
   public disabled?: boolean;
-
   public type?: INVITATION_TYPES;
-
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -39,13 +38,15 @@ Notification.init(
     userId: { type: DataTypes.INTEGER, allowNull: false },
     isNew: { type: DataTypes.BOOLEAN, defaultValue: true },
     groupId: { type: DataTypes.INTEGER, allowNull: true },
+    teamId: { type: DataTypes.INTEGER, allowNull: true },
+
     disabled: { type: DataTypes.BOOLEAN, defaultValue: false },
     type: { type: DataTypes.STRING, allowNull: true },
   },
   {
     sequelize,
-    modelName: "Notification",
-  }
+    modelName: 'Notification',
+  },
 );
 
 export default Notification;

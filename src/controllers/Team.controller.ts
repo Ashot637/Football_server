@@ -311,6 +311,11 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
         });
       }
     }
+    const teamChat = await TeamChat.create({
+      lastMessageTimestamp: new Date(),
+      forPublic: false,
+    });
+    await UserForChat.create({ userId: id, chatId: teamChat.id, lastSeenMessageTime: undefined });
   } catch (error) {
     next(error);
   }

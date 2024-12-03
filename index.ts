@@ -93,7 +93,7 @@ app.get('/ip', async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 });
-app.get('/team', async (req: Request, res: Response, next: NextFunction) => {
+app.get('/team-invite', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ipAddress = req.headers['x-forwarded-for'] as string;
     const { token } = req.query;

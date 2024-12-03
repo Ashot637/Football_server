@@ -25,7 +25,7 @@ router.post(
   TeamController.addToTeam,
 );
 router.delete(
-  '/team/delete',
+  '/team/delete/:id',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   TeamController.remove,
 );
@@ -40,7 +40,6 @@ router.get(
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
   TeamController.getMyTeams,
 );
-
 
 router.post(
   '/team/leave',
@@ -59,7 +58,6 @@ router.post(
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
   TeamController.acceptInvitation,
 );
-
 
 router.get(
   '/team/:id',

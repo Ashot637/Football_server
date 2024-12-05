@@ -67,20 +67,27 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
 
-    const { id } = req.user;
-    const user = await Team.findAll({ where: { userId: id } });
-    if (!user) {
-      return res.status(400).json({ success: false });
-    }
+    const { id: userId } = req.user;
     const { teamId } = req.params;
-    const team = await Team.findByPk(teamId);
+
+    // Проверка принадлежности команды пользователю
+    const team = await Team.findOne({
+      where: { id: teamId, userId },
+    });
+
     if (!team) {
-      return res.status(404).json({ success: false });
+      return res.status(404).json({
+        success: false,
+        message: 'Team not found or you do not have access to it',
+      });
     }
+
+    // Удаление команды и связанных данных
     await Team.destroy({ where: { id: teamId } });
     await TeamPlayer.destroy({ where: { teamId } });
     await TeamGame.destroy({ where: { teamId } });
-    return res.status(202).json({ success: true });
+
+    return res.status(204).send(); // Успешное удаление
   } catch (error) {
     next(error);
   }

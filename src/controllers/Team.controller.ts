@@ -68,11 +68,11 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
 
     const { id: userId } = req.user;
-    const { teamId } = req.params;
+    const { id } = req.params;
 
     // Проверка принадлежности команды пользователю
     const team = await Team.findOne({
-      where: { id: teamId, userId },
+      where: { id: id, userId },
     });
 
     if (!team) {
@@ -83,9 +83,9 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
 
     // Удаление команды и связанных данных
-    await Team.destroy({ where: { id: teamId } });
-    await TeamPlayer.destroy({ where: { teamId } });
-    await TeamGame.destroy({ where: { teamId } });
+    await Team.destroy({ where: { id: id } });
+    await TeamPlayer.destroy({ where: { id } });
+    await TeamGame.destroy({ where: { id } });
 
     return res.status(204).send(); // Успешное удаление
   } catch (error) {

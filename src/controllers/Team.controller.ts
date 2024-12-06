@@ -70,7 +70,6 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     const { id: userId } = req.user;
     const { id } = req.params;
 
-    // Проверка принадлежности команды пользователю
     const team = await Team.findOne({
       where: { id: id, userId },
     });
@@ -82,12 +81,11 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
       });
     }
 
-    // Удаление команды и связанных данных
     await Team.destroy({ where: { id: id } });
     await TeamPlayer.destroy({ where: { id } });
     await TeamGame.destroy({ where: { id } });
 
-    return res.status(204).send(); // Успешное удаление
+    return res.status(204).send();
   } catch (error) {
     next(error);
   }
@@ -274,7 +272,7 @@ const getMyTeams = async (req: RequestWithUser, res: Response, next: NextFunctio
     next(error);
   }
 };
-const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const acceptGameInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
@@ -327,6 +325,36 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
     next(error);
   }
 };
+const acceptTeamInvitation = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id, teamId } = req.body;
+    const invitation = await Invitation.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ success: false, message: 'Invitation not found' });
+    }
+
+    if (invitation.type === 'TEAM') {
+      await TeamPlayer.create({ userId: +userId, teamId });
+      const chat = await TeamChat.findOne({ where: { teamId } });
+      if (chat) {
+        await UserForChat.create({ chatId: chat.id, userId });
+      }
+      await Invitation.destroy({ where: { id } });
+    }
+    return res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   create,
   getAll,
@@ -338,5 +366,6 @@ export default {
   getOneTeam,
   inviteTeamtoGame,
   getMyTeams,
-  acceptInvitation,
+  acceptGameInvitation,
+  acceptTeamInvitation
 };

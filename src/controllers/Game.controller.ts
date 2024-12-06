@@ -525,11 +525,11 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       // });
       return res.send({ success: true });
     }
-
     await UserGroup.create({
       groupId: group.id,
       userId,
     });
+
 
     return res.send({ success: true });
   } catch (error) {

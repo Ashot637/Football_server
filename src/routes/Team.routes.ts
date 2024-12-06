@@ -56,7 +56,7 @@ router.post(
 router.post(
   '/team/acceptInvitation',
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
-  TeamController.acceptInvitation,
+  TeamController.acceptGameInvitation,
 );
 
 router.get(

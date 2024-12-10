@@ -142,34 +142,6 @@ const addToTeam = async (req: RequestWithUser, res: Response, next: NextFunction
   }
 };
 
-const reamoveForTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-    const { id } = req.user;
-    const user = await Team.findAll({ where: { userId: id } });
-    if (!user) {
-      return res.status(400).json({ success: false });
-    }
-    const { userId, teamId } = req.body;
-
-    const teamPlayer = await TeamPlayer.findOne({ where: { teamId, userId } });
-    if (!teamPlayer) {
-      return res.status(404).json({ success: false });
-    }
-    await TeamPlayer.destroy({
-      where: {
-        teamId,
-        userId,
-      },
-    });
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const getOneTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
@@ -355,17 +327,45 @@ const acceptTeamInvitation = async (req: RequestWithUser, res: Response, next: N
     next(error);
   }
 };
+
+const deleteFromTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id, teamId } = req.body;
+    const teamOwner = await Team.findAll({ where: { userId, id: teamId } });
+    if (!teamOwner) {
+      return res.status(404).json({ success: false });
+    }
+    await TeamPlayer.destroy({
+      where: {
+        userId: id,
+        teamId,
+      },
+    });
+    const teamChat = await TeamChat.findByPk(teamId);
+    if (!teamChat) {
+      return res.status(404).json({ success: false });
+    }
+    await UserForChat.destroy({ where: { userId: id, chatId: teamChat.id } });
+    return res.status(200).send();
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   create,
   getAll,
   remove,
   getUsers,
   addToTeam,
-  reamoveForTeam,
   leaveFromTeam,
   getOneTeam,
   inviteTeamtoGame,
   getMyTeams,
   acceptGameInvitation,
-  acceptTeamInvitation
+  acceptTeamInvitation,
+  deleteFromTeam,
 };

@@ -32,7 +32,7 @@ router.delete(
 router.delete(
   '/team/deletePlayer',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.reamoveForTeam,
+  TeamController.deleteFromTeam,
 );
 
 router.get(
@@ -57,6 +57,12 @@ router.post(
   '/team/acceptInvitation',
   checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
   TeamController.acceptGameInvitation,
+);
+
+router.post(
+  '/team/accept',
+  checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
+  TeamController.acceptTeamInvitation,
 );
 
 router.get(

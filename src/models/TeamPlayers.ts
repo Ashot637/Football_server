@@ -7,6 +7,7 @@ interface TeamPlayerAttributes {
   teamId: number;
   playerStatus: string | null;
   playerPosition: string | null;
+  playerNumber: number | null;
 }
 
 class TeamPlayer
@@ -18,6 +19,7 @@ class TeamPlayer
   public teamId!: number;
   public playerStatus!: string;
   public playerPosition!: string;
+  public playerNumber!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -29,6 +31,7 @@ TeamPlayer.init(
     teamId: { type: DataTypes.INTEGER, allowNull: false },
     playerStatus: { type: DataTypes.STRING, allowNull: true },
     playerPosition: { type: DataTypes.STRING, allowNull: true },
+    playerNumber: { type: DataTypes.INTEGER, allowNull: true },
   },
   {
     sequelize,

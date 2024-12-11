@@ -115,7 +115,7 @@ app.get('/team-invite', async (req: Request, res: Response, next: NextFunction) 
       where: {
         ip: ipAddress,
         teamId: decoded.teamId,
-        gameId: decoded.gameId ?? 0,
+        gameId: decoded.gameId ?? null,
         type: decoded.type,
       },
     });
@@ -125,7 +125,7 @@ app.get('/team-invite', async (req: Request, res: Response, next: NextFunction) 
         ip: ipAddress,
         teamId: decoded.teamId,
         from: decoded.from ?? '',
-        gameId: decoded.gameId ?? 0,
+        gameId: decoded.gameId ?? null,
         type: decoded.type,
       });
     }

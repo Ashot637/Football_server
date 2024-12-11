@@ -313,14 +313,22 @@ const acceptTeamInvitation = async (req: RequestWithUser, res: Response, next: N
     if (!invitation) {
       return res.status(404).json({ success: false, message: 'Invitation not found' });
     }
-
     if (invitation.type === 'TEAM') {
+      const team = await Team.findByPk(teamId);
+      if (!team) {
+        return res.status(404).send();
+      }
       await TeamPlayer.create({ userId: +userId, teamId });
       const chat = await TeamChat.findOne({ where: { teamId } });
       if (chat) {
         await UserForChat.create({ chatId: chat.id, userId });
       }
       await Invitation.destroy({ where: { id } });
+      await Notification.create({
+        teamId,
+        isNew: true,
+        userId,
+      });
     }
     return res.status(204).send();
   } catch (error) {
@@ -355,6 +363,20 @@ const deleteFromTeam = async (req: RequestWithUser, res: Response, next: NextFun
     next(error);
   }
 };
+
+// const givePlayerInfo = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+//   try {
+//     try {
+//       if (!req.user) {
+//         return res.status(401).json({ success: false, message: 'Not authenticated' });
+//       }
+//       const { id: userId } = req.user;
+//   } catch (error) {
+//     next(error)
+//   }
+// }
+// }
+
 export default {
   create,
   getAll,

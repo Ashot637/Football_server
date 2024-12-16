@@ -121,6 +121,16 @@ Team.hasMany(TeamPlayer, {
   foreignKey: 'teamId',
 });
 
+TeamPlayer.belongsTo(User, {
+  as: 'user', // Алиас для использования в include
+  foreignKey: 'userId',
+});
+
+User.hasMany(TeamPlayer, {
+  as: 'teamPlayer', // Связь для обратного использования
+  foreignKey: 'userId',
+});
+
 Game.belongsToMany(Team, {
   as: 'team',
   foreignKey: 'gameId',

@@ -65,6 +65,12 @@ router.post(
   TeamController.acceptTeamInvitation,
 );
 
+router.put(
+  '/team/givePlayerInfo',
+  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
+  TeamController.givePlayerInfo,
+);
+
 router.get(
   '/team/:id',
   checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),

@@ -8,13 +8,14 @@ import {
   UserForChat,
   UserGroup,
   Notification,
+  User,
 } from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
 import sendPushNotifications from '../helpers/sendPushNotification';
 import { INVITATION_TYPES } from '../models/Invitation.model';
 
-import { Op } from 'sequelize';
+import { Model, Op } from 'sequelize';
 import { error } from 'console';
 
 const create = async (req: RequestWithUser, res: Response, next: NextFunction) => {
@@ -97,7 +98,16 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
     if (!teamId) {
       return res.status(400).json({ success: false, message: 'missing query parametrs' });
     }
-    const users = await TeamPlayer.findAll({ where: { teamId: +teamId } });
+    const users = await TeamPlayer.findAll({
+      where: { teamId: +teamId },
+      include: [
+        {
+          model: User,
+          as: 'user',
+        },
+      ],
+    });
+
     return res.status(200).json({ users });
   } catch (error) {
     next(error);
@@ -364,18 +374,32 @@ const deleteFromTeam = async (req: RequestWithUser, res: Response, next: NextFun
   }
 };
 
-// const givePlayerInfo = async (req: RequestWithUser, res: Response, next: NextFunction) => {
-//   try {
-//     try {
-//       if (!req.user) {
-//         return res.status(401).json({ success: false, message: 'Not authenticated' });
-//       }
-//       const { id: userId } = req.user;
-//   } catch (error) {
-//     next(error)
-//   }
-// }
-// }
+const givePlayerInfo = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    const { id: userId } = req.user;
+    const { id, number, position, teamId } = req.body;
+
+    await TeamPlayer.update(
+      {
+        playerNumber: number,
+        playerPosition: position,
+      },
+      {
+        where: {
+          teamId: teamId,
+          userId: id,
+        },
+      },
+    );
+
+    return res.status(200).send();
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default {
   create,
@@ -390,4 +414,5 @@ export default {
   acceptGameInvitation,
   acceptTeamInvitation,
   deleteFromTeam,
+  givePlayerInfo,
 };

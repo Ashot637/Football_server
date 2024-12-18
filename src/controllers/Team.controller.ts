@@ -9,11 +9,13 @@ import {
   UserGroup,
   Notification,
   User,
+  Game,
 } from '../models';
 import { ROLES } from '../types/Roles';
 import type { RequestWithUser } from '../types/RequestWithUser';
 import sendPushNotifications from '../helpers/sendPushNotification';
 import { INVITATION_TYPES } from '../models/Invitation.model';
+import * as uuid from 'uuid';
 
 import { Model, Op } from 'sequelize';
 import { error } from 'console';
@@ -173,6 +175,7 @@ const leaveFromTeam = async (req: RequestWithUser, res: Response, next: NextFunc
     }
     const { id } = req.user;
     await TeamPlayer.destroy({ where: { userId: id } });
+    // await UserForChat.destroy({where:{}})
     return res.status(200).json({ success: true });
   } catch (error) {
     next(error);
@@ -401,6 +404,87 @@ const givePlayerInfo = async (req: RequestWithUser, res: Response, next: NextFun
   }
 };
 
+const createGameFromTeam = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const { id: userId } = req.user;
+    const {
+      priceOneHour,
+      priceOneHourAndHalf,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      uniforms,
+      teamId,
+      invitedTeamId,
+    } = req.body;
+
+    if (!teamId || !invitedTeamId || !startTime || !endTime || !stadionId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Missing required parameters (teamId, invitedTeamId, startTime, endTime, stadionId)',
+      });
+    }
+
+    const game = await Game.create({
+      priceOneHour,
+      priceOneHourAndHalf,
+      startTime,
+      endTime,
+      maxPlayersCount,
+      stadionId,
+      teamId,
+      uuid: uuid.v4(),
+    });
+
+    await TeamGame.create({
+      teamId,
+      gameId: game.id,
+      result: undefined,
+      goalsCount: undefined,
+    });
+
+    const [team, invitedTeam] = await Promise.all([
+      Team.findByPk(teamId),
+      Team.findByPk(invitedTeamId),
+    ]);
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found' });
+    }
+
+    if (!invitedTeam) {
+      return res.status(404).json({ success: false, message: 'Invited team not found' });
+    }
+
+    const invitedTeamOwner = await User.findByPk(invitedTeam.userId);
+    if (!invitedTeamOwner || !invitedTeamOwner.expoPushToken) {
+      return res.status(404).json({
+        success: false,
+        message: 'Owner of the invited team or their Expo push token not found',
+      });
+    }
+
+    try {
+      await sendPushNotifications(
+        [invitedTeamOwner.expoPushToken],
+        `Your team is invited to a game from ${team.name}`,
+      );
+    } catch (pushError) {
+      console.error('Failed to send push notification:', pushError);
+    }
+
+    return res.status(200).json({ success: true, message: 'Game created successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   create,
   getAll,
@@ -415,4 +499,5 @@ export default {
   acceptTeamInvitation,
   deleteFromTeam,
   givePlayerInfo,
+  createGameFromTeam,
 };

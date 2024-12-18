@@ -52,6 +52,7 @@ interface CreateRequest {
   stadionId: number;
   range: 1 | 4;
   uniforms: number[];
+  type: 'GROUP' | 'TEAM';
 }
 
 const create = async (req: Request<{}, {}, CreateRequest>, res: Response, next: NextFunction) => {
@@ -529,7 +530,6 @@ const acceptInvitation = async (req: RequestWithUser, res: Response, next: NextF
       groupId: group.id,
       userId,
     });
-
 
     return res.send({ success: true });
   } catch (error) {

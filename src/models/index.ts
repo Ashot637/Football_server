@@ -122,12 +122,12 @@ Team.hasMany(TeamPlayer, {
 });
 
 TeamPlayer.belongsTo(User, {
-  as: 'user', // Алиас для использования в include
+  as: 'user', 
   foreignKey: 'userId',
 });
 
 User.hasMany(TeamPlayer, {
-  as: 'teamPlayer', // Связь для обратного использования
+  as: 'teamPlayer', 
   foreignKey: 'userId',
 });
 

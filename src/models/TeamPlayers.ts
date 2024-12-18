@@ -1,6 +1,12 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../db';
-
+export enum PLAYER_POSITION_TYPES {
+  GOALKEEPER = 'GOALKEEPER',
+  GROUP = 'GROUP',
+  DEFENDER = 'DEFENDER',
+  MIDIFIELDER = 'MIDIFIELDER',
+  FORWARD = 'FORWARD',
+}
 interface TeamPlayerAttributes {
   id?: number;
   userId: number;

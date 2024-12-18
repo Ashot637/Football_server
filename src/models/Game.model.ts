@@ -3,6 +3,10 @@ import sequelize from '../db';
 import User from './User.model';
 import Stadion from './Stadion.model';
 
+export enum GAME_TYPES {
+  TEAM = 'TEAM',
+  GROUP = 'GROUP',
+}
 interface GameAttributes {
   id: number;
   priceOneHour?: number;
@@ -12,7 +16,8 @@ interface GameAttributes {
   maxPlayersCount: number;
   stadionId: number;
   isPublic?: boolean;
-  groupId: number;
+  groupId?: number;
+  teamId?: number;
   uuid: string;
   creatorId?: number;
   isReplaying?: boolean;
@@ -32,11 +37,11 @@ class Game extends Model<GameAttributes, GameCreationAttributes> implements Game
   public maxPlayersCount!: number;
   public stadionId!: number;
   public isPublic!: boolean;
-  public groupId!: number;
+  public groupId?: number | undefined;
+  public teamId?: number | undefined;
   public uuid!: string;
   public creatorId?: number;
   public isReplaying?: boolean;
-
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
   public users?: User[];
@@ -55,6 +60,7 @@ Game.init(
     isReplaying: { type: DataTypes.BOOLEAN, defaultValue: false },
     uuid: { type: DataTypes.STRING, defaultValue: '' },
     groupId: { type: DataTypes.INTEGER },
+    teamId: { type: DataTypes.INTEGER },
     creatorId: { type: DataTypes.INTEGER, defaultValue: 0 },
   },
   {

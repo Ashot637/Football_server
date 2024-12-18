@@ -2,79 +2,39 @@ import Router from 'express';
 import checkRole from '../middlewares/checkRole';
 import { ROLES } from '../types/Roles';
 import TeamController from '../controllers/Team.controller';
+
 const router = Router();
 
-router.post(
-  '/team/create',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.create,
-);
-router.get(
-  '/team/getAll',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getAll,
-);
-router.get(
-  '/team/getUsers',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getUsers,
-);
-router.post(
-  '/team/addMember',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.addToTeam,
-);
-router.delete(
-  '/team/delete/:id',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.remove,
-);
-router.delete(
-  '/team/deletePlayer',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.deleteFromTeam,
-);
+// Роли, применяемые для большинства маршрутов
+const DEFAULT_ROLES = [ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER];
 
-router.get(
-  '/team/my',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getMyTeams,
-);
+// Общие маршруты команды
+router
+  .route('/team')
+  .post(checkRole(...DEFAULT_ROLES), TeamController.create) // Создать команду
+  .get(checkRole(...DEFAULT_ROLES), TeamController.getAll); // Получить все команды
 
-router.post(
-  '/team/leave',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.leaveFromTeam,
-);
+// Управление участниками команды
+router.post('/team/addMember', checkRole(...DEFAULT_ROLES), TeamController.addToTeam);
+router.post('/team/leave', checkRole(...DEFAULT_ROLES), TeamController.leaveFromTeam);
+router.delete('/team/deletePlayer', checkRole(...DEFAULT_ROLES), TeamController.deleteFromTeam);
 
+// Управление играми
+router.post('/team/game/create', checkRole(...DEFAULT_ROLES), TeamController.createGameFromTeam);
+router.post('/team/game/invite', checkRole(...DEFAULT_ROLES), TeamController.inviteTeamtoGame);
 router.post(
-  '/team/invite',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.inviteTeamtoGame,
-);
-
-router.post(
-  '/team/acceptInvitation',
-  checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
+  '/team/game/invitation/accept',
+  checkRole(...DEFAULT_ROLES),
   TeamController.acceptGameInvitation,
 );
 
-router.post(
-  '/team/accept',
-  checkRole(ROLES.ADMIN, ROLES.STADION_OWNER, ROLES.USER),
-  TeamController.acceptTeamInvitation,
-);
+router.post('/team/accept', checkRole(...DEFAULT_ROLES), TeamController.acceptTeamInvitation);
 
-router.put(
-  '/team/givePlayerInfo',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.givePlayerInfo,
-);
+router.get('/team/my', checkRole(...DEFAULT_ROLES), TeamController.getMyTeams);
+router.get('/team/:id', checkRole(...DEFAULT_ROLES), TeamController.getOneTeam);
 
-router.get(
-  '/team/:id',
-  checkRole(ROLES.USER, ROLES.ADMIN, ROLES.STADION_OWNER),
-  TeamController.getOneTeam,
-);
+router.put('/team/givePlayerInfo', checkRole(...DEFAULT_ROLES), TeamController.givePlayerInfo);
+
+router.delete('/team/delete/:id', checkRole(...DEFAULT_ROLES), TeamController.remove);
 
 export default router;

@@ -71,7 +71,7 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     }
 
     const { id: userId } = req.user;
-    const { id } = req.body;
+    const { id } = req.params;
 
     const team = await Team.findOne({
       where: { id: id, userId },

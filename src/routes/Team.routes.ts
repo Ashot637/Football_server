@@ -34,6 +34,6 @@ router.get('/team/:id', checkRole(...DEFAULT_ROLES), TeamController.getOneTeam);
 
 router.put('/team/givePlayerInfo', checkRole(...DEFAULT_ROLES), TeamController.givePlayerInfo);
 
-router.delete('/team/delete/', checkRole(...DEFAULT_ROLES), TeamController.remove);
+router.delete('/team/delete/:id', checkRole(...DEFAULT_ROLES), TeamController.remove);
 
 export default router;

@@ -88,7 +88,7 @@ const remove = async (req: RequestWithUser, res: Response, next: NextFunction) =
     await TeamPlayer.destroy({ where: { id } });
     await TeamGame.destroy({ where: { id } });
 
-    return res.status(204).send();
+    return res.status(204).json({ success: true });
   } catch (error) {
     next(error);
   }

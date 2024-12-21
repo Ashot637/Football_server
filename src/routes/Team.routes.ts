@@ -15,6 +15,7 @@ router
 router.post('/team/addMember', checkRole(...DEFAULT_ROLES), TeamController.addToTeam);
 router.post('/team/leave', checkRole(...DEFAULT_ROLES), TeamController.leaveFromTeam);
 router.delete('/team/deletePlayer', checkRole(...DEFAULT_ROLES), TeamController.deleteFromTeam);
+router.get('/team/getUsers', checkRole(...DEFAULT_ROLES), TeamController.getUsers);
 
 router.post('/team/game/create', checkRole(...DEFAULT_ROLES), TeamController.createGameFromTeam);
 router.post('/team/game/invite', checkRole(...DEFAULT_ROLES), TeamController.inviteTeamtoGame);
